@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>คำนวณ Result</title>
+<style>
+  :root {
+    --ink: #1c2430;
+    --sub: #6b7686;
+    --line: #c9d0da;
+    --line-focus: #3b6ef0;
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --accent: #3b6ef0;
+    --accent-ink: #ffffff;
+    --result-bg: #eef3ff;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.5 -apple-system, "Segoe UI", "Noto Sans Thai", Tahoma, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 24px 12px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 680px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px 26px 20px;
+    box-shadow: 0 6px 20px rgba(20, 30, 50, 0.06);
+  }
+
+  h1 {
+    font-size: 18px;
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  /* สองคอลัมน์: ซ้าย = input, ขวา = result */
+  .columns {
+    display: flex;
+    gap: 14px;
+  }
+
+  .col {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .field label {
+    width: 60px;
+    flex: 0 0 60px;
+    font-size: 15px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .field input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 9px 11px;
+    font-size: 15px;
+    border: 1.5px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+  }
+
+  .field input:focus {
+    border-color: var(--line-focus);
+    box-shadow: 0 0 0 3px rgba(59, 110, 240, 0.15);
+  }
+
+  .field.result input {
+    background: var(--result-bg);
+    font-weight: 600;
+    color: #1a3a8f;
+    border-color: #c3d3fb;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--line);
+    margin: 4px 0 18px;
+    border: none;
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  button {
+    flex: 1;
+    padding: 11px 5px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: opacity 120ms ease, transform 80ms ease;
+  }
+
+  button:active { transform: translateY(1px); }
+
+  #calcBtn {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  #calcBtn:hover { opacity: 0.92; }
+
+  #resetBtn {
+    background: #fff;
+    color: var(--sub);
+    border-color: var(--line);
+  }
+  #resetBtn:hover { background: #f1f2f5; }
+
+  .error {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: #c0392b;
+    display: none;
+  }
+  .error.show { display: block; }
+
+  /* Responsive: จอแคบ ยังคงเป็น 2 คอลัมน์เสมอ แค่ลดระยะห่าง/ขนาด label ลง */
+  @media (max-width: 480px) {
+    .card { padding: 18px 14px 16px; }
+    .columns { gap: 8px; }
+    .field { gap: 6px; margin-bottom: 12px; }
+    .field label { width: 46px; flex: 0 0 46px; font-size: 13px; }
+    .field input { padding: 8px 8px; font-size: 14px; }
+  }
+
+  @media (max-width: 360px) {
+    .field label { width: 38px; flex: 0 0 38px; font-size: 12px; }
+    .field input { padding: 7px 6px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+<!--  <h1>คำนวณ Result</h1> -->
+
+  <div class="columns">
+    <div class="col">
+      <div class="field">
+        <label for="equity">Equity</label>
+        <input type="number" id="equity" inputmode="decimal" step="any" placeholder="0" />
+      </div>
+
+      <div class="field">
+        <label for="diff">Diff</label>
+        <input type="number" id="diff" inputmode="decimal" step="any" placeholder="0" />
+      </div>
+
+      <div class="field">
+        <label for="price">Price</label>
+        <input type="number" id="price" inputmode="decimal" step="any" placeholder="0" />
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="field result">
+        <label for="davg">Avg</label>
+        <input type="text" id="davg" readonly />
+      </div>
+
+      <div class="field result">
+        <label for="result1">Result 1</label>
+        <input type="text" id="result1" readonly />
+      </div>
+
+      <div class="field result">
+        <label for="result2">Result 2</label>
+        <input type="text" id="result2" readonly />
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <p class="error" id="errMsg">กรุณากรอก Equity, Diff, Price ให้ครบ และ Diff ต้องไม่เป็น 0</p>
+
+  <div class="actions">
+    <button id="calcBtn" type="button">คำนวณ</button>
+    <button id="resetBtn" type="button">ล้างค่า</button>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var equityEl = document.getElementById('equity');
+    var diffEl   = document.getElementById('diff');
+    var priceEl  = document.getElementById('price');
+    var r1El     = document.getElementById('result1');
+    var r2El     = document.getElementById('result2');
+    var errEl    = document.getElementById('errMsg');
+    var calcBtn  = document.getElementById('calcBtn');
+    var resetBtn = document.getElementById('resetBtn');
+    var davg = document.getElementById('davg');
+
+    function calc() {
+      var equity = parseFloat(equityEl.value);
+      var diff   = parseFloat(diffEl.value);
+      var price  = parseFloat(priceEl.value);
+
+      var valid =
+        !isNaN(equity) && !isNaN(diff) && !isNaN(price) && diff !== 0;
+
+      if (!valid) {
+        errEl.classList.add('show');
+        davg.value = '';
+        r1El.value = '';
+        r2El.value = '';
+        return;
+      }
+      errEl.classList.remove('show');
+
+      var ratio = equity / diff;
+      var result1 = price + ratio;
+      var result2 = price - ratio;
+
+      davg.value = formatNumber(ratio);
+      r1El.value = formatNumber(result1);
+      r2El.value = formatNumber(result2);
+    }
+
+    function formatNumber(n) {
+      // ตัดทศนิยมไม่ให้ยาวเกิน แต่ยังคงความแม่นยำที่สมเหตุสมผล
+      var rounded = Math.round(n * 1e6) / 1e6;
+      return rounded.toString();
+    }
+
+    function reset() {
+      equityEl.value = '';
+      diffEl.value = '';
+      priceEl.value = '';
+      davg.value = '';
+      r1El.value = '';
+      r2El.value = '';
+      errEl.classList.remove('show');
+      equityEl.focus();
+    }
+
+    calcBtn.addEventListener('click', calc);
+    resetBtn.addEventListener('click', reset);
+
+    // กด Enter ในช่องกรอกใดก็คำนวณได้เลย
+    [equityEl, diffEl, priceEl].forEach(function (el) {
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') calc();
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>
