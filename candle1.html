@@ -107,8 +107,9 @@
     height: 16px;
     border-radius: 3px;
   }
+  /* Tooltip เป็น absolute ภายใน main-content จะถูก rotate ตามกราฟอัตโนมัติ */
   .tooltip {
-    position: fixed;
+    position: absolute;
     background: rgba(255,255,255,0.97);
     border: 1px solid #ccc;
     border-radius: 6px;
@@ -261,7 +262,7 @@
 
 <div class="main-content" id="mainContent">
   <div class="filter-bar">
-    <label for="dateFrom">ตั้งแต่::</label>
+    <label for="dateFrom">ตั้งแต่:</label>
     <input type="date" id="dateFrom">
     <label for="dateTo">ถึง:</label>
     <input type="date" id="dateTo">
@@ -275,9 +276,10 @@
   </div>
 
   <div class="legend" id="legend"></div>
-</div>
 
-<div class="tooltip" id="tooltip"></div>
+  <!-- Tooltip อยู่ภายใน main-content → จะถูก rotate ตามกราฟอัตโนมัติ -->
+  <div class="tooltip" id="tooltip"></div>
+</div>
 
 <script>
 const rawData = [
@@ -672,26 +674,56 @@ function showTooltip(cx, cy, slotIndex) {
   tooltip.innerHTML = html;
   tooltip.style.display = 'block';
 
-  // คำนวณตำแหน่ง tooltip - แสดงด้านบนของจุดสัมผัสเสมอ
+  const isAutoRotated = document.body.classList.contains('auto-rotated');
   const ttW = tooltip.offsetWidth;
   const ttH = tooltip.offsetHeight;
-  
-  let tx = cx + 10;
-  let ty = cy - ttH - 10; // แสดงเหนือจุดสัมผัส
-  
-  // ถ้าล้นขอบบน → แสดงด้านล่าง
-  if (ty < 5) {
-    ty = cy + 10;
+
+  let tx, ty;
+
+  if (isAutoRotated) {
+    // Tooltip อยู่ภายใน main-content ที่ถูก rotate 90deg
+    // ต้องแปลง viewport coordinate (cx, cy) → main-content coordinate
+    // หลัง rotate 90deg รอบ top-left: x_main = cy, y_main = W_viewport - cx
+    const W_viewport = window.innerWidth;
+    
+    // ตำแหน่งใน main-content (หลัง rotate)
+    const xInMain = cy;
+    const yInMain = W_viewport - cx;
+    
+    // แสดง tooltip เหนือจุดสัมผัส (ใน rotated view = ด้านซ้ายของจุด)
+    tx = xInMain + 10;
+    ty = yInMain - ttH - 10;
+    
+    // ถ้าล้นขอบบน (ใน rotated view = ขอบซ้าย) → ย้ายไปด้านล่าง
+    if (ty < 5) {
+      ty = yInMain + 10;
+    }
+    // ถ้าล้นขอบขวา (ใน rotated view = ขอบล่างของ main-content ซึ่งคือความสูง = window.innerWidth)
+    const maxH = window.innerWidth;
+    if (ty + ttH > maxH - 5) {
+      ty = maxH - ttH - 5;
+    }
+    // ขอบซ้าย
+    if (tx < 5) tx = 5;
+    // ขอบขวา (ความกว้างของ main-content = window.innerHeight)
+    const maxW = window.innerHeight;
+    if (tx + ttW > maxW - 5) {
+      tx = maxW - ttW - 5;
+    }
+  } else {
+    // ปกติ (คอมพิวเตอร์ / มือถือแนวนอนจริง)
+    tx = cx + 10;
+    ty = cy - ttH - 10;
+    
+    if (ty < 5) {
+      ty = cy + 10;
+    }
+    if (tx + ttW > window.innerWidth - 5) {
+      tx = cx - ttW - 10;
+    }
+    if (tx < 5) tx = 5;
   }
-  // ถ้าล้นขอบขวา → ย้ายไปซ้าย
-  if (tx + ttW > window.innerWidth - 5) {
-    tx = cx - ttW - 10;
-  }
-  // ถ้าล้นขอบซ้าย
-  if (tx < 5) {
-    tx = 5;
-  }
-  
+
   tooltip.style.left = tx + 'px';
   tooltip.style.top = ty + 'px';
 }
