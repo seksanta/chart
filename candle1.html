@@ -30,7 +30,8 @@
     font-weight: 600;
     white-space: nowrap;
   }
-  .filter-bar input[type="date"] {
+  .filter-bar input[type="date"],
+  .filter-bar select {
     padding: 6px 8px;
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -39,8 +40,10 @@
     outline: none;
     min-width: 0;
     flex-shrink: 1;
+    background: #fff;
   }
-  .filter-bar input[type="date"]:focus { border-color: #4a90d9; }
+  .filter-bar input[type="date"]:focus,
+  .filter-bar select:focus { border-color: #4a90d9; }
   .filter-bar .btn-search {
     padding: 6px 16px;
     background: #4a90d9;
@@ -224,7 +227,8 @@
     gap: 6px;
   }
   body.auto-rotated .filter-bar label { font-size: 12px; }
-  body.auto-rotated .filter-bar input[type="date"] { padding: 5px 6px; font-size: 12px; }
+  body.auto-rotated .filter-bar input[type="date"],
+  body.auto-rotated .filter-bar select { padding: 5px 6px; font-size: 12px; }
   body.auto-rotated .filter-bar .btn-search,
   body.auto-rotated .filter-bar .btn-reset { padding: 5px 10px; font-size: 12px; }
   body.auto-rotated .filter-bar .result-info { font-size: 11px; }
@@ -266,6 +270,8 @@
     <label for="dateTo">ถึง:</label>
     <input type="date" id="dateTo">
     <button class="btn-search" id="btnSearch">🔍 ค้นหา</button>
+    <label for="dateSelect">เพิ่มวัน:</label>
+    <select id="dateSelect"></select>
     <button class="btn-reset" id="btnReset">รีเซ็ต</button>
     <div class="result-info" id="resultInfo"></div>
   </div>
@@ -871,20 +877,17 @@ const rawData = [
 const dateColors = {};
 const dateOrder = [];
 
-// สีคงที่สำหรับ 3 วันล่าสุด (เมื่อเปิดหน้าครั้งแรก)
-// คำนวณตอน init แล้วเก็บไว้
 const FIXED_LAST3_COLORS = {
-  oldest: '#2e7d32',   // เขียว - วันเก่าสุดใน 3 วัน
-  middle: '#1565c0',   // น้ำเงิน - วันกลาง
-  newest: '#c62828'    // แดง - วันล่าสุด
+  oldest: '#2e7d32',
+  middle: '#1565c0',
+  newest: '#c62828'
 };
 
-let fixedLast3Dates = []; // เก็บ 3 วันล่าสุดของข้อมูลทั้งหมด
+let fixedLast3Dates = [];
 
 function getColorForDate(date) {
   if (dateColors[date]) return dateColors[date];
 
-  // ตรวจสอบว่าเป็น 1 ใน 3 วันล่าสุด (fixed) หรือไม่
   if (fixedLast3Dates.length === 3) {
     if (date === fixedLast3Dates[0]) {
       dateColors[date] = FIXED_LAST3_COLORS.oldest;
@@ -903,7 +906,6 @@ function getColorForDate(date) {
     }
   }
 
-  // วันที่เหลือใช้ golden angle
   const index = dateOrder.length;
   dateOrder.push(date);
   const hue = (index * 137.508) % 360;
@@ -948,18 +950,21 @@ const ctx = canvas.getContext('2d');
 const tooltip = document.getElementById('tooltip');
 
 let W, H, margin, chartW, chartH;
-let yMin, yMax, yRange; // จะคำนวณจากข้อมูล
+let yMin, yMax, yRange;
 
 let hoveredSlot = -1;
 let timeGroups = {};
 let times = [];
 let currentData = [];
 
+// เก็บช่วงวันที่ปัจจุบัน และวันที่ที่เพิ่มผ่าน select
+let currentFromDate = null;
+let currentToDate = null;
+let addedDates = [];
+
 function calcYRange(data) {
   if (data.length === 0) {
-    yMin = 4100;
-    yMax = 4200;
-    yRange = yMax - yMin;
+    yMin = 4100; yMax = 4200; yRange = yMax - yMin;
     return;
   }
   let min = Infinity, max = -Infinity;
@@ -967,9 +972,9 @@ function calcYRange(data) {
     if (item.l < min) min = item.l;
     if (item.h > max) max = item.h;
   });
-  const padding = (max - min) * 0.08; // padding 8%
-  yMin = Math.floor((min - padding) / 10) * 10; // ปัดลงเป็นสิบ
-  yMax = Math.ceil((max + padding) / 10) * 10;  // ปัดขึ้นเป็นสิบ
+  const padding = (max - min) * 0.08;
+  yMin = Math.floor((min - padding) / 10) * 10;
+  yMax = Math.ceil((max + padding) / 10) * 10;
   yRange = yMax - yMin;
 }
 
@@ -978,13 +983,8 @@ function calcLayout() {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
-  if (isAutoRotated) {
-    W = vh;
-    H = vw;
-  } else {
-    W = vw;
-    H = vh;
-  }
+  if (isAutoRotated) { W = vh; H = vw; }
+  else { W = vw; H = vh; }
 
   const filterH = isAutoRotated ? 50 : 60;
   const legendH = isAutoRotated ? 35 : 45;
@@ -1213,32 +1213,19 @@ function showTooltip(cx, cy, slotIndex) {
     const W_viewport = window.innerWidth;
     const xInMain = cy;
     const yInMain = W_viewport - cx;
-    
     tx = xInMain + 10;
     ty = yInMain - ttH - 10;
-    
-    if (ty < 5) {
-      ty = yInMain + 10;
-    }
+    if (ty < 5) ty = yInMain + 10;
     const maxH = window.innerWidth;
-    if (ty + ttH > maxH - 5) {
-      ty = maxH - ttH - 5;
-    }
+    if (ty + ttH > maxH - 5) ty = maxH - ttH - 5;
     if (tx < 5) tx = 5;
     const maxW = window.innerHeight;
-    if (tx + ttW > maxW - 5) {
-      tx = maxW - ttW - 5;
-    }
+    if (tx + ttW > maxW - 5) tx = maxW - ttW - 5;
   } else {
     tx = cx + 10;
     ty = cy - ttH - 10;
-    
-    if (ty < 5) {
-      ty = cy + 10;
-    }
-    if (tx + ttW > window.innerWidth - 5) {
-      tx = cx - ttW - 10;
-    }
+    if (ty < 5) ty = cy + 10;
+    if (tx + ttW > window.innerWidth - 5) tx = cx - ttW - 10;
     if (tx < 5) tx = 5;
   }
 
@@ -1271,8 +1258,13 @@ function updateResultInfo(data) {
   }
 }
 
+// ===== กรองข้อมูล + รวมวันที่ที่เพิ่มผ่าน select =====
 function applyFilter(fromDate, toDate, limitToLast3 = false) {
+  currentFromDate = fromDate;
+  currentToDate = toDate;
+
   let filtered = filterData(rawData, fromDate, toDate);
+
   if (limitToLast3) {
     const uniqueDates = getUniqueSortedDates(filtered);
     if (uniqueDates.length > 3) {
@@ -1280,13 +1272,54 @@ function applyFilter(fromDate, toDate, limitToLast3 = false) {
       filtered = filtered.filter(item => last3.includes(item.d));
     }
   }
+
+  // รวมวันที่ที่เพิ่มผ่าน select (ถ้ายังไม่มีใน filtered)
+  addedDates.forEach(d => {
+    const dayData = rawData.filter(item => item.d === d);
+    dayData.forEach(item => {
+      const exists = filtered.some(f => f.d === item.d && f.t === item.t);
+      if (!exists) filtered.push(item);
+    });
+  });
+
   currentData = filtered;
-  calcYRange(filtered); // คำนวณ Y range จากข้อมูลที่กรองแล้ว
+  calcYRange(filtered);
   buildGroups(filtered);
   draw();
   buildLegend();
   updateResultInfo(filtered);
 }
+
+// ===== Select: เพิ่มวัน =====
+function populateDateSelect() {
+  const select = document.getElementById('dateSelect');
+  const allDates = getUniqueSortedDates(rawData);
+  select.innerHTML = '<option value="">เลือกวัน</option>';
+  allDates.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    select.appendChild(opt);
+  });
+}
+
+document.getElementById('dateSelect').addEventListener('change', (e) => {
+  const selected = e.target.value;
+  if (selected) {
+    // เพิ่มวันนั้น ถ้ายังไม่มี
+    if (!addedDates.includes(selected)) {
+      addedDates.push(selected);
+    }
+    applyFilter(currentFromDate, currentToDate, false);
+    e.target.value = ''; // reset กลับเป็น "เลือกวัน"
+  } else {
+    // เลือก "" → ลบวันล่าสุดที่เพิ่มออก
+    if (addedDates.length > 0) {
+      addedDates.pop();
+      applyFilter(currentFromDate, currentToDate, false);
+    }
+  }
+});
 
 function setDefaults() {
   const allDates = getUniqueSortedDates(rawData);
@@ -1296,6 +1329,7 @@ function setDefaults() {
   fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
   document.getElementById('dateFrom').value = toInputDate(formatDateKey(fiveDaysAgo));
   document.getElementById('dateTo').value = toInputDate(formatDateKey(latestDate));
+  addedDates = [];
   applyFilter(fiveDaysAgo, latestDate, true);
 }
 
@@ -1309,6 +1343,8 @@ function onSearch() {
     alert('วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด');
     return;
   }
+  addedDates = []; // รีเซ็ตวันที่เพิ่มเมื่อค้นหาใหม่
+  document.getElementById('dateSelect').value = '';
   applyFilter(fromDate, toDate, false);
 }
 
@@ -1329,9 +1365,7 @@ function isMobilePortrait() {
 
 function tryLockLandscape() {
   if (screen.orientation && screen.orientation.lock) {
-    screen.orientation.lock('landscape').catch(() => {
-      enableAutoRotate();
-    });
+    screen.orientation.lock('landscape').catch(() => { enableAutoRotate(); });
   } else {
     enableAutoRotate();
   }
@@ -1341,9 +1375,7 @@ function enableAutoRotate() {
   document.body.classList.add('auto-rotated');
   overlay.classList.remove('active');
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      draw();
-    });
+    requestAnimationFrame(() => { draw(); });
   });
 }
 
@@ -1352,9 +1384,7 @@ function disableAutoRotate() {
 }
 
 btnAutoRotate.addEventListener('click', tryLockLandscape);
-btnContinuePortrait.addEventListener('click', () => {
-  overlay.classList.remove('active');
-});
+btnContinuePortrait.addEventListener('click', () => { overlay.classList.remove('active'); });
 
 window.addEventListener('orientationchange', () => {
   setTimeout(() => {
@@ -1381,14 +1411,15 @@ window.addEventListener('resize', () => {
   }, 150);
 });
 
-// ===== Init: คำนวณ 3 วันล่าสุดของข้อมูลทั้งหมด เพื่อใช้สีคงที่ =====
+// ===== Init =====
 const allDates = getUniqueSortedDates(rawData);
 if (allDates.length >= 3) {
-  fixedLast3Dates = allDates.slice(-3); // [oldest, middle, newest]
+  fixedLast3Dates = allDates.slice(-3);
 } else {
   fixedLast3Dates = allDates;
 }
 
+populateDateSelect();
 setDefaults();
 
 if (isMobilePortrait()) {
