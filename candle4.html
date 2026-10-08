@@ -44,8 +44,7 @@
 
 <script>
 // ===== ข้อมูลจากไฟล์ CSV (อยู่โฟลเดอร์เดียวกับไฟล์ html) =====
-//const CSV_FILE = 'XAUUSDM30.csv';
- const CSV_FILE = 'XAUUSDM30.csv';
+const CSV_FILE = 'XAUUSD__M30.csv';
 let RAW = [], ALL_DATES = [], T2 = {}, LAST3 = [], FIXED_OFFSET = 0;
 const pad2 = n => String(n).padStart(2, '0');
 
@@ -185,22 +184,15 @@ function render() {
 
 // ===== controls =====
 const elFrom = document.getElementById('dateFrom'), elSel = document.getElementById('dateSelect');
-/*
-function populateSelect() {
-  elSel.innerHTML = '<option value="">เลือกวัน</option>' + ALL_DATES.map(d => `<option value="${d}">${d}</option>`).join('');
-}
-*/
+
 function populateSelect() {
   elSel.innerHTML = '<option value="">เลือกวัน</option>' + [...ALL_DATES].reverse().map(d => `<option value="${d}">${d}</option>`).join('');
-} 
+}
 function setDefaults() {
   if (!ALL_DATES.length) { render(); return; }
-  const today = new Date(); today.setHours(0,0,0,0);
-  let start = new Date(today); start.setDate(start.getDate() - 5);
-  // ถ้าไม่มีข้อมูลตั้งแต่ 5 วันก่อนเป็นต้นมา ให้ถอยจากวันล่าสุดใน CSV แทน
-  const latest = parseKey(ALL_DATES[ALL_DATES.length - 1]);
-  if (latest < start) { start = new Date(latest); start.setDate(start.getDate() - 5); }
-  from = start; added = [];
+  // ค่าเริ่มต้น: แสดง 3 วันล่าสุดใน CSV (เช่น 7, 8, 9) โดยตั้ง "ตั้งแต่" เป็นวันที่ที่ 3 นับจากล่าสุด
+  from = parseKey(ALL_DATES[Math.max(0, ALL_DATES.length - 3)]);
+  added = [];
   elFrom.value = toInput(from); elSel.value = '';
   render();
 }
