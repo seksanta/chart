@@ -185,10 +185,14 @@ function render() {
 
 // ===== controls =====
 const elFrom = document.getElementById('dateFrom'), elSel = document.getElementById('dateSelect');
-
+/*
 function populateSelect() {
   elSel.innerHTML = '<option value="">เลือกวัน</option>' + ALL_DATES.map(d => `<option value="${d}">${d}</option>`).join('');
 }
+*/
+function populateSelect() {
+  elSel.innerHTML = '<option value="">เลือกวัน</option>' + [...ALL_DATES].reverse().map(d => `<option value="${d}">${d}</option>`).join('');
+} 
 function setDefaults() {
   if (!ALL_DATES.length) { render(); return; }
   const today = new Date(); today.setHours(0,0,0,0);
