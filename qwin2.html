@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Candlestick Chart - Grouped by Time</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #fff;
+    padding: 12px;
+  }
+  .filter-bar {
+    max-width: 1400px;
+    margin: 0 auto 12px;
+    padding: 10px 14px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+  }
+  .filter-bar label {
+    font-size: 13px;
+    color: #555;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .filter-bar input[type="date"],
+  .filter-bar select {
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    min-width: 0;
+    flex-shrink: 1;
+    background: #fff;
+  }
+  .filter-bar input[type="date"]:focus,
+  .filter-bar select:focus { border-color: #4a90d9; }
+  .filter-bar .btn-search {
+    padding: 6px 16px;
+    background: #4a90d9;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .filter-bar .btn-search:hover { background: #357abd; }
+  .filter-bar .btn-reset {
+    padding: 6px 12px;
+    background: #fff;
+    color: #555;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .filter-bar .btn-reset:hover { background: #eee; }
+  .filter-bar .result-info {
+    font-size: 12px;
+    color: #777;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    border: 1px solid #e8e8e8;
+    border-radius: 4px;
+    cursor: crosshair;
+  }
+  .legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 12px;
+    font-size: 14px;
+    color: #555;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+  }
+  .tooltip {
+    position: absolute;
+    background: rgba(255,255,255,0.97);
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: none;
+    z-index: 10000;
+    max-width: 320px;
+  }
+  .tooltip .tt-title {
+    font-weight: bold;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+  }
+  .tooltip .tt-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+    font-size: 12px;
+  }
+  .tooltip .tt-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .tooltip .tt-date {
+    font-weight: 600;
+    color: #333;
+    min-width: 90px;
+  }
+  .tooltip .tt-values {
+    color: #555;
+    font-family: 'Consolas', monospace;
+    font-size: 11px;
+  }
+  .tooltip .tt-values span { margin-right: 8px; }
+  .tooltip .tt-values .lbl { color: #888; }
+
+  .rotate-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: #fff;
+    text-align: center;
+    padding: 40px;
+  }
+  .rotate-overlay.active { display: flex; }
+  .rotate-overlay .icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: rotateHint 2s ease-in-out infinite;
+  }
+  @keyframes rotateHint {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+  }
+  .rotate-overlay .message { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
+  .rotate-overlay .sub-message { font-size: 16px; color: #ccc; margin-bottom: 30px; }
+  .rotate-overlay .btn-rotate {
+    padding: 14px 32px;
+    background: #4a90d9;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .rotate-overlay .btn-continue {
+    margin-top: 12px;
+    padding: 10px 24px;
+    background: transparent;
+    color: #aaa;
+    border: 1px solid #555;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  body.auto-rotated {
+    padding: 0;
+    overflow: hidden;
+    background: #fff;
+  }
+  body.auto-rotated .main-content {
+    transform: rotate(90deg);
+    transform-origin: top left;
+    position: fixed;
+    top: 0;
+    left: 100vw;
+    width: 100vh;
+    min-height: 100vw;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px;
+    background: #fff;
+  }
+  body.auto-rotated .filter-bar {
+    max-width: none;
+    margin: 0 0 8px 0;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  body.auto-rotated .filter-bar label { font-size: 12px; }
+  body.auto-rotated .filter-bar input[type="date"],
+  body.auto-rotated .filter-bar select { padding: 5px 6px; font-size: 12px; }
+  body.auto-rotated .filter-bar .btn-search,
+  body.auto-rotated .filter-bar .btn-reset { padding: 5px 10px; font-size: 12px; }
+  body.auto-rotated .filter-bar .result-info { font-size: 11px; }
+  body.auto-rotated .chart-container {
+    max-width: none;
+    margin: 0;
+    width: 100%;
+  }
+  body.auto-rotated .legend {
+    max-width: none;
+    margin: 8px 0 0 0;
+    gap: 12px;
+    font-size: 12px;
+  }
+  body.auto-rotated .rotate-overlay { display: none !important; }
+
+  @media screen and (orientation: portrait) and (max-width: 900px) {
+    .rotate-overlay { display: flex; }
+  }
+  @media screen and (orientation: landscape) and (max-width: 900px) {
+    .rotate-overlay { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="rotate-overlay" id="rotateOverlay">
+  <div class="icon">📱</div>
+  <div class="message">กรุณาหมุนหน้าจอเป็นแนวนอน</div>
+  <div class="sub-message">เพื่อประสบการณ์การดูกราฟที่ดีที่สุด</div>
+  <button class="btn-rotate" id="btnAutoRotate">🔄 หมุนอัตโนมัติ</button>
+  <button class="btn-continue" id="btnContinuePortrait">ดูในแนวตั้งต่อไป</button>
+</div>
+
+<div class="main-content" id="mainContent">
+  <div class="filter-bar">
+    <label for="dateFrom">ตั้งแต่:</label>
+    <input type="date" id="dateFrom">
+    <label for="dateTo">ถึง:</label>
+    <input type="date" id="dateTo">
+    <button class="btn-search" id="btnSearch"> ค้นหา</button>
+    <label for="dateSelect">เพิ่มวัน:</label>
+    <select id="dateSelect"></select>
+    <button class="btn-reset" id="btnReset">รีเซ็ต</button>
+    <div class="result-info" id="resultInfo"></div>
+  </div>
+
+  <div class="chart-container" id="chartContainer">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="tooltip" id="tooltip"></div>
+</div>
+
+<script>
+// rawData จะถูกโหลดจาก CSV
+let rawData = [];
+
+const dateColors = {};
+const dateOrder = [];
+
+const FIXED_LAST3_COLORS = {
+  oldest: '#2e7d32',
+  middle: '#1565c0',
+  newest: '#c62828'
+};
+
+let fixedLast3Dates = [];
+
+function getColorForDate(date) {
+  if (dateColors[date]) return dateColors[date];
+
+  if (fixedLast3Dates.length === 3) {
+    if (date === fixedLast3Dates[0]) {
+      dateColors[date] = FIXED_LAST3_COLORS.oldest;
+      dateOrder.push(date);
+      return dateColors[date];
+    }
+    if (date === fixedLast3Dates[1]) {
+      dateColors[date] = FIXED_LAST3_COLORS.middle;
+      dateOrder.push(date);
+      return dateColors[date];
+    }
+    if (date === fixedLast3Dates[2]) {
+      dateColors[date] = FIXED_LAST3_COLORS.newest;
+      dateOrder.push(date);
+      return dateColors[date];
+    }
+  }
+
+  const index = dateOrder.length;
+  dateOrder.push(date);
+  const hue = (index * 137.508) % 360;
+  dateColors[date] = `hsl(${hue}, 70%, 40%)`;
+  return dateColors[date];
+}
+
+function parseDataDate(ds) {
+  const [dd, mm, yy] = ds.split('-');
+  return new Date(2000 + parseInt(yy), parseInt(mm) - 1, parseInt(dd));
+}
+function parseInputDate(ds) {
+  const [y, m, d] = ds.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+function formatDateKey(dt) {
+  const dd = String(dt.getDate()).padStart(2, '0');
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const yy = String(dt.getFullYear()).slice(-2);
+  return `${dd}-${mm}-${yy}`;
+}
+function toInputDate(ds) {
+  const [dd, mm, yy] = ds.split('-');
+  return `20${yy}-${mm}-${dd}`;
+}
+function getUniqueSortedDates(data) {
+  const set = new Set(data.map(d => d.d));
+  return [...set].sort((a, b) => parseDataDate(a) - parseDataDate(b));
+}
+function filterData(data, fromDate, toDate) {
+  return data.filter(item => {
+    const d = parseDataDate(item.d);
+    if (fromDate && d < fromDate) return false;
+    if (toDate && d > toDate) return false;
+    return true;
+  });
+}
+
+// ===== โหลดและแปลงข้อมูลจาก CSV =====
+async function loadCSV() {
+  const response = await fetch('XAUUSDM30.csv');
+  if (!response.ok) throw new Error('Failed to load CSV');
+  const text = await response.text();
+  const lines = text.trim().split('\n');
+  const data = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const cols = line.split('\t');
+    if (cols.length < 6) continue;
+
+    const dateStr = cols[0].trim();   // 2026.10.06
+    const timeStr = cols[1].trim();   // 23:30:00
+    const open = parseFloat(cols[2]);
+    const high = parseFloat(cols[3]);
+    const low = parseFloat(cols[4]);
+    const close = parseFloat(cols[5]);
+
+    if (isNaN(open) || isNaN(high) || isNaN(low) || isNaN(close)) continue;
+
+    // แยกวันที่เดิม
+    const [year, month, day] = dateStr.split('.').map(Number);
+    let date = new Date(year, month - 1, day);
+
+    let time1, time2;
+    const [hh, mm] = timeStr.split(':').map(Number);
+
+    if (timeStr === '23:00:00' || timeStr === '23:30:00') {
+      // บวกวันเพิ่ม 1 วัน
+      date = new Date(year, month - 1, day + 1);
+      time1 = (timeStr === '23:00:00') ? '00:00' : '00:30';
+    } else {
+      // ใช้วันที่เดิม, time1 = time + 1 ชั่วโมง
+      let newH = hh + 1;
+      if (newH >= 24) newH = 0;
+      time1 = `${String(newH).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    }
+
+    // time2 = time1 + 5 ชั่วโมง
+    const [t1h, t1m] = time1.split(':').map(Number);
+    let t2h = t1h + 5;
+    if (t2h >= 24) t2h -= 24;
+    time2 = `${String(t2h).padStart(2, '0')}:${String(t1m).padStart(2, '0')}`;
+
+    // แปลงวันที่เป็นรูปแบบ dd-mm-yy
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mo = String(date.getMonth() + 1).padStart(2, '0');
+    const yy = String(date.getFullYear()).slice(-2);
+    const d = `${dd}-${mo}-${yy}`;
+
+    data.push({ d, t: time1, t2: time2, o: open, h: high, l: low, c: close });
+  }
+
+  return data;
+}
+
+const canvas = document.getElementById('chart');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+
+let W, H, margin, chartW, chartH;
+let yMin, yMax, yRange;
+
+let hoveredSlot = -1;
+let timeGroups = {};
+let times = [];
+let currentData = [];
+
+let currentFromDate = null;
+let currentToDate = null;
+let addedDates = [];
+
+function calcYRange(data) {
+  if (data.length === 0) {
+    yMin = 4100; yMax = 4200; yRange = yMax - yMin;
+    return;
+  }
+  let min = Infinity, max = -Infinity;
+  data.forEach(item => {
+    if (item.l < min) min = item.l;
+    if (item.h > max) max = item.h;
+  });
+  const padding = (max - min) * 0.08;
+  yMin = Math.floor((min - padding) / 10) * 10;
+  yMax = Math.ceil((max + padding) / 10) * 10;
+  yRange = yMax - yMin;
+}
+
+function calcLayout() {
+  const isAutoRotated = document.body.classList.contains('auto-rotated');
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  if (isAutoRotated) { W = vh; H = vw; }
+  else { W = vw; H = vh; }
+
+  const filterH = isAutoRotated ? 50 : 60;
+  const legendH = isAutoRotated ? 35 : 45;
+  const pad = isAutoRotated ? 16 : 24;
+  const chartH_total = H - filterH - legendH - pad;
+
+  margin = {
+    top: 12,
+    right: isAutoRotated ? 35 : 55,
+    bottom: isAutoRotated ? 50 : 70,
+    left: isAutoRotated ? 40 : 55
+  };
+  chartW = W - margin.left - margin.right;
+  chartH = chartH_total - margin.top - margin.bottom;
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr;
+  canvas.height = chartH_total * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = chartH_total + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function yToPixel(y) {
+  return margin.top + chartH - ((y - yMin) / yRange) * chartH;
+}
+
+function buildGroups(data) {
+  Object.keys(dateColors).forEach(k => delete dateColors[k]);
+  dateOrder.length = 0;
+  timeGroups = {};
+  data.forEach(item => {
+    if (!timeGroups[item.t]) timeGroups[item.t] = [];
+    timeGroups[item.t].push(item);
+  });
+  Object.keys(timeGroups).forEach(t => {
+    timeGroups[t].sort((a, b) => a.d.localeCompare(b.d));
+    timeGroups[t].forEach(item => { item.color = getColorForDate(item.d); });
+  });
+  times = Object.keys(timeGroups).sort();
+}
+
+function draw() {
+  calcLayout();
+  ctx.clearRect(0, 0, W, H + 200);
+
+  if (times.length === 0) {
+    ctx.fillStyle = '#999';
+    ctx.font = '18px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('ไม่พบข้อมูลในช่วงวันที่เลือก', W / 2, (margin.top + chartH) / 2);
+    return;
+  }
+
+  const numSlots = times.length;
+  const slotW = chartW / numSlots;
+
+  ctx.strokeStyle = '#f0f0f0';
+  ctx.lineWidth = 1;
+  for (let y = yMin; y <= yMax; y += 20) {
+    const py = yToPixel(y);
+    ctx.beginPath();
+    ctx.moveTo(margin.left, py);
+    ctx.lineTo(W - margin.right, py);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = '#e8e8e8';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= numSlots; i++) {
+    const px = margin.left + i * slotW;
+    ctx.beginPath();
+    ctx.moveTo(px, margin.top);
+    ctx.lineTo(px, margin.top + chartH);
+    ctx.stroke();
+  }
+
+  if (hoveredSlot >= 0 && hoveredSlot < numSlots) {
+    const hx = margin.left + hoveredSlot * slotW;
+    ctx.fillStyle = 'rgba(200, 220, 255, 0.25)';
+    ctx.fillRect(hx, margin.top, slotW, chartH);
+  }
+
+  ctx.fillStyle = '#888';
+  ctx.font = '12px Arial';
+  ctx.textAlign = 'right';
+  for (let y = yMin; y <= yMax; y += 20) {
+    const py = yToPixel(y);
+    ctx.fillText(y, margin.left - 8, py + 4);
+  }
+
+  const labelInterval = Math.max(1, Math.floor(numSlots / 18));
+  ctx.fillStyle = '#666';
+  ctx.font = '11px Arial';
+  ctx.textAlign = 'center';
+
+  for (let i = 0; i < numSlots; i += labelInterval) {
+    const px = margin.left + i * slotW + slotW / 2;
+    const t1 = times[i];
+    const t2 = timeGroups[times[i]][0].t2;
+    ctx.fillText(t1, px, margin.top + chartH + 16);
+    ctx.fillText(t2, px, margin.top + chartH + 30);
+  }
+
+  const maxPerSlot = Math.max(...Object.values(timeGroups).map(g => g.length));
+  const candleW = Math.max(2, (slotW * 0.85) / maxPerSlot);
+  const candleGap = 1;
+
+  for (let i = 0; i < numSlots; i++) {
+    const group = timeGroups[times[i]];
+    const slotCenterX = margin.left + i * slotW + slotW / 2;
+    const groupWidth = group.length * (candleW + candleGap);
+    const startX = slotCenterX - groupWidth / 2;
+
+    group.forEach((item, j) => {
+      const px = startX + j * (candleW + candleGap) + candleW / 2;
+      const color = item.color;
+      const oY = yToPixel(item.o);
+      const cY = yToPixel(item.c);
+      const hY = yToPixel(item.h);
+      const lY = yToPixel(item.l);
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(px, hY);
+      ctx.lineTo(px, lY);
+      ctx.stroke();
+
+      const bodyTop = Math.min(oY, cY);
+      const bodyHeight = Math.max(Math.abs(oY - cY), 1);
+      ctx.fillStyle = color;
+      ctx.fillRect(px - candleW / 2, bodyTop, candleW, bodyHeight);
+    });
+  }
+}
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = (margin.top + chartH) / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+
+  const numSlots = times.length;
+  if (numSlots === 0) { tooltip.style.display = 'none'; return; }
+
+  const slotW = chartW / numSlots;
+  const slotIndex = Math.floor((mx - margin.left) / slotW);
+
+  if (slotIndex >= 0 && slotIndex < numSlots && mx >= margin.left && mx <= W - margin.right && my >= margin.top && my <= margin.top + chartH) {
+    hoveredSlot = slotIndex;
+    draw();
+    showTooltip(e.clientX, e.clientY, slotIndex);
+  } else {
+    if (hoveredSlot !== -1) { hoveredSlot = -1; draw(); }
+    tooltip.style.display = 'none';
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoveredSlot = -1;
+  draw();
+  tooltip.style.display = 'none';
+});
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = (margin.top + chartH) / rect.height;
+  const mx = (touch.clientX - rect.left) * scaleX;
+  const my = (touch.clientY - rect.top) * scaleY;
+
+  const numSlots = times.length;
+  if (numSlots === 0) return;
+
+  const slotW = chartW / numSlots;
+  const slotIndex = Math.floor((mx - margin.left) / slotW);
+
+  if (slotIndex >= 0 && slotIndex < numSlots && mx >= margin.left && mx <= W - margin.right) {
+    hoveredSlot = slotIndex;
+    draw();
+    showTooltip(touch.clientX, touch.clientY, slotIndex);
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => {
+  hoveredSlot = -1;
+  draw();
+  tooltip.style.display = 'none';
+});
+
+function showTooltip(cx, cy, slotIndex) {
+  const group = timeGroups[times[slotIndex]];
+  const t1 = times[slotIndex];
+  const t2 = group[0].t2;
+
+  let html = `<div class="tt-title"> ${t1} – ${t2}</div>`;
+  group.forEach(item => {
+    const fmt = v => v.toFixed(2);
+    html += `
+      <div class="tt-row">
+        <div class="tt-color" style="background:${item.color}"></div>
+        <div class="tt-date">${item.d}</div>
+        <div class="tt-values">
+          <span><span class="lbl">O</span>${fmt(item.o)}</span>
+          <span><span class="lbl">H</span>${fmt(item.h)}</span>
+          <span><span class="lbl">L</span>${fmt(item.l)}</span>
+          <span><span class="lbl">C</span>${fmt(item.c)}</span>
+        </div>
+      </div>`;
+  });
+
+  tooltip.innerHTML = html;
+  tooltip.style.display = 'block';
+
+  const isAutoRotated = document.body.classList.contains('auto-rotated');
+  const ttW = tooltip.offsetWidth;
+  const ttH = tooltip.offsetHeight;
+
+  let tx, ty;
+
+  if (isAutoRotated) {
+    const W_viewport = window.innerWidth;
+    const xInMain = cy;
+    const yInMain = W_viewport - cx;
+    tx = xInMain + 10;
+    ty = yInMain - ttH - 10;
+    if (ty < 5) ty = yInMain + 10;
+    const maxH = window.innerWidth;
+    if (ty + ttH > maxH - 5) ty = maxH - ttH - 5;
+    if (tx < 5) tx = 5;
+    const maxW = window.innerHeight;
+    if (tx + ttW > maxW - 5) tx = maxW - ttW - 5;
+  } else {
+    tx = cx + 10;
+    ty = cy - ttH - 10;
+    if (ty < 5) ty = cy + 10;
+    if (tx + ttW > window.innerWidth - 5) tx = cx - ttW - 10;
+    if (tx < 5) tx = 5;
+  }
+
+  tooltip.style.left = tx + 'px';
+  tooltip.style.top = ty + 'px';
+}
+
+function buildLegend() {
+  const legend = document.getElementById('legend');
+  legend.innerHTML = '';
+  if (dateOrder.length === 0) return;
+  dateOrder.forEach(date => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `
+      <div class="legend-color" style="background:${dateColors[date]}"></div>
+      <span>${date}</span>
+    `;
+    legend.appendChild(item);
+  });
+}
+
+function updateResultInfo(data) {
+  const info = document.getElementById('resultInfo');
+  const uniqueDates = [...new Set(data.map(d => d.d))].sort();
+  if (uniqueDates.length === 0) {
+    info.textContent = 'ไม่พบข้อมูล';
+  } else {
+    info.textContent = `${uniqueDates.length}วัน|${data.length}rec`;
+  }
+}
+
+function applyFilter(fromDate, toDate, limitToLast3 = false) {
+  currentFromDate = fromDate;
+  currentToDate = toDate;
+
+  let filtered = filterData(rawData, fromDate, toDate);
+
+  if (limitToLast3) {
+    const uniqueDates = getUniqueSortedDates(filtered);
+    if (uniqueDates.length > 3) {
+      const last3 = uniqueDates.slice(-3);
+      filtered = filtered.filter(item => last3.includes(item.d));
+    }
+  }
+
+  addedDates.forEach(d => {
+    const dayData = rawData.filter(item => item.d === d);
+    dayData.forEach(item => {
+      const exists = filtered.some(f => f.d === item.d && f.t === item.t);
+      if (!exists) filtered.push(item);
+    });
+  });
+
+  currentData = filtered;
+  calcYRange(filtered);
+  buildGroups(filtered);
+  draw();
+  buildLegend();
+  updateResultInfo(filtered);
+}
+
+function populateDateSelect() {
+  const select = document.getElementById('dateSelect');
+  const allDates = getUniqueSortedDates(rawData);
+  select.innerHTML = '<option value="">เลือกวัน</option>';
+  allDates.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    select.appendChild(opt);
+  });
+}
+
+document.getElementById('dateSelect').addEventListener('change', (e) => {
+  const selected = e.target.value;
+  if (selected) {
+    if (!addedDates.includes(selected)) {
+      addedDates.push(selected);
+    }
+    applyFilter(currentFromDate, currentToDate, false);
+    e.target.value = '';
+  } else {
+    if (addedDates.length > 0) {
+      addedDates.pop();
+      applyFilter(currentFromDate, currentToDate, false);
+    }
+  }
+});
+
+function setDefaults() {
+  const allDates = getUniqueSortedDates(rawData);
+  if (allDates.length === 0) return;
+  const latestDate = parseDataDate(allDates[allDates.length - 1]);
+  const fiveDaysAgo = new Date(latestDate);
+  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+  document.getElementById('dateFrom').value = toInputDate(formatDateKey(fiveDaysAgo));
+  document.getElementById('dateTo').value = toInputDate(formatDateKey(latestDate));
+  addedDates = [];
+  applyFilter(fiveDaysAgo, latestDate, true);
+}
+
+function onSearch() {
+  const fromVal = document.getElementById('dateFrom').value;
+  const toVal = document.getElementById('dateTo').value;
+  let fromDate = null, toDate = null;
+  if (fromVal) fromDate = parseInputDate(fromVal);
+  if (toVal) toDate = parseInputDate(toVal);
+  if (fromDate && toDate && fromDate > toDate) {
+    alert('วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด');
+    return;
+  }
+  addedDates = [];
+  document.getElementById('dateSelect').value = '';
+  applyFilter(fromDate, toDate, false);
+}
+
+function onReset() { setDefaults(); }
+
+document.getElementById('btnSearch').addEventListener('click', onSearch);
+document.getElementById('btnReset').addEventListener('click', onReset);
+document.getElementById('dateFrom').addEventListener('keydown', e => { if (e.key === 'Enter') onSearch(); });
+document.getElementById('dateTo').addEventListener('keydown', e => { if (e.key === 'Enter') onSearch(); });
+
+const overlay = document.getElementById('rotateOverlay');
+const btnAutoRotate = document.getElementById('btnAutoRotate');
+const btnContinuePortrait = document.getElementById('btnContinuePortrait');
+
+function isMobilePortrait() {
+  return window.innerWidth <= 900 && window.innerWidth < window.innerHeight;
+}
+
+function tryLockLandscape() {
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('landscape').catch(() => { enableAutoRotate(); });
+  } else {
+    enableAutoRotate();
+  }
+}
+
+function enableAutoRotate() {
+  document.body.classList.add('auto-rotated');
+  overlay.classList.remove('active');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { draw(); });
+  });
+}
+
+function disableAutoRotate() {
+  document.body.classList.remove('auto-rotated');
+}
+
+btnAutoRotate.addEventListener('click', tryLockLandscape);
+btnContinuePortrait.addEventListener('click', () => { overlay.classList.remove('active'); });
+
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    if (isMobilePortrait() && !document.body.classList.contains('auto-rotated')) {
+      overlay.classList.add('active');
+    } else {
+      overlay.classList.remove('active');
+      if (!isMobilePortrait()) disableAutoRotate();
+    }
+    draw();
+  }, 300);
+});
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (isMobilePortrait() && !document.body.classList.contains('auto-rotated')) {
+      overlay.classList.add('active');
+    } else {
+      overlay.classList.remove('active');
+    }
+    draw();
+  }, 150);
+});
+
+// ===== Init: โหลด CSV และเริ่มต้น =====
+async function init() {
+  try {
+    rawData = await loadCSV();
+  } catch (e) {
+    console.error('Failed to load CSV:', e);
+    alert('ไม่สามารถโหลดไฟล์ XAUUSDM30.csv ได้\nกรุณาเปิดไฟล์ HTML ผ่าน local server (ไม่ใช่ file://)');
+    return;
+  }
+
+  const allDates = getUniqueSortedDates(rawData);
+  if (allDates.length >= 3) {
+    fixedLast3Dates = allDates.slice(-3);
+  } else {
+    fixedLast3Dates = allDates;
+  }
+
+  populateDateSelect();
+  setDefaults();
+
+  if (isMobilePortrait()) {
+    overlay.classList.add('active');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
