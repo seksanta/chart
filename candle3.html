@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Candlestick Chart - Grouped by Time (ECharts)</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; overflow: hidden; }
+  .main { display: flex; flex-direction: column; width: 100%; height: 100%; padding: 10px; background: #fff; }
+  .filter-bar {
+    padding: 8px 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px;
+    display: flex; align-items: center; gap: 8px; overflow-x: auto; flex-shrink: 0; margin-bottom: 8px;
+  }
+  .filter-bar label { font-size: 13px; color: #555; font-weight: 600; white-space: nowrap; }
+  .filter-bar input, .filter-bar select {
+    padding: 5px 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; font-family: inherit; background: #fff; min-width: 0;
+  }
+  .btn-search { padding: 6px 14px; background: #4a90d9; color: #fff; border: none; border-radius: 5px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn-reset { padding: 6px 12px; background: #fff; color: #555; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .result-info { font-size: 12px; color: #777; white-space: nowrap; }
+  #chart { flex: 1; min-height: 0; width: 100%; border: 1px solid #e8e8e8; border-radius: 4px; }
+  /* หมุนแนวนอนอัตโนมัติบนมือถือที่ถือแนวตั้ง */
+  body.rotated .main {
+    position: fixed; top: 0; left: 0; transform-origin: top left; transform: rotate(90deg); padding: 6px;
+  }
+  body.rotated .filter-bar { padding: 5px 8px; gap: 6px; margin-bottom: 4px; }
+  body.rotated .filter-bar * { font-size: 12px !important; }
+</style>
+</head>
+<body>
+<div class="main" id="main">
+  <div class="filter-bar">
+    <label for="dateFrom">ตั้งแต่:</label><input type="date" id="dateFrom">
+    <label for="dateTo">ถึง:</label><input type="date" id="dateTo">
+    <button class="btn-search" id="btnSearch">🔍 ค้นหา</button>
+    <label for="dateSelect">เพิ่มวัน:</label><select id="dateSelect"></select>
+    <button class="btn-reset" id="btnReset">รีเซ็ต</button>
+    <div class="result-info" id="resultInfo"></div>
+  </div>
+  <div id="chart"></div>
+</div>
+
+<script>
+// ===== ข้อมูลจากไฟล์ CSV (อยู่โฟลเดอร์เดียวกับไฟล์ html) =====
+const CSV_FILE = 'XAUUSD__M30.csv';
+let RAW = [], ALL_DATES = [], T2 = {}, LAST3 = [], FIXED_OFFSET = 0;
+const pad2 = n => String(n).padStart(2, '0');
+
+// คอลัมน์: DATE(yyyy.mm.dd) TIME(hh:mm:ss) OPEN HIGH LOW CLOSE ... (คั่นด้วย Tab)
+// time1 = TIME + 1 ชม. (23:xx -> 00:xx และวันที่ +1) , time2 = time1 + 5 ชม.
+function parseCsv(text) {
+  const out = [];
+  text.split(/\r?\n/).forEach(line => {
+    const p = line.trim().split(/\t|,/);
+    if (p.length < 6 || !/^\d{4}\.\d{2}\.\d{2}$/.test(p[0])) return; // ข้ามหัวตาราง/บรรทัดว่าง
+    const [y, m, d] = p[0].split('.').map(Number);
+    const [hh, mm] = p[1].split(':').map(Number);
+    const dt = new Date(y, m - 1, d);
+    let h1;
+    if (hh === 23) { dt.setDate(dt.getDate() + 1); h1 = 0; } else { h1 = hh + 1; }
+    out.push({
+      d: toKey(dt), t: pad2(h1) + ':' + pad2(mm), t2: pad2((h1 + 5) % 24) + ':' + pad2(mm),
+      o: +p[2], h: +p[3], l: +p[4], c: +p[5]
+    });
+  });
+  return out;
+}
+function initData(rows) {
+  RAW = rows;
+  ALL_DATES = [...new Set(RAW.map(r => r.d))].sort((a, b) => parseKey(a) - parseKey(b));
+  T2 = {}; RAW.forEach(r => T2[r.t] = r.t2);
+  LAST3 = ALL_DATES.slice(-3);
+  FIXED_OFFSET = 3 - LAST3.length;
+}
+
+// ===== helpers วันที่ =====
+const parseKey = k => { const [dd,mm,yy] = k.split('-').map(Number); return new Date(2000+yy, mm-1, dd); };
+const toKey = dt => String(dt.getDate()).padStart(2,'0')+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getFullYear()).slice(-2);
+const toInput = dt => dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+const parseInput = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+
+
+// ===== สี: fix 3 วันล่าสุด, วันอื่นสีคงที่ตามลำดับวัน =====
+const FIXED = ['#2e7d32', '#1565c0', '#c62828']; // เก่าสุด, กลาง, ล่าสุด
+function colorOf(date) {
+  const i = LAST3.indexOf(date);
+  if (i >= 0) return FIXED[i + FIXED_OFFSET];
+  return `hsl(${(ALL_DATES.indexOf(date) * 137.508 + 30) % 360}, 70%, 40%)`;
+}
+
+// ===== state =====
+let from = null, to = null, limitLast3 = true, added = [];
+const chart = echarts.init(document.getElementById('chart'));
+
+function visibleDates() {
+  let ds = ALL_DATES.filter(d => {
+    const dt = parseKey(d);
+    return (!from || dt >= from) && (!to || dt <= to);
+  });
+  if (limitLast3) ds = ds.slice(-3);
+  added.forEach(d => { if (!ds.includes(d)) ds.push(d); });
+  return ds.sort((a,b) => parseKey(a) - parseKey(b));
+}
+
+function render() {
+  const dates = visibleDates();
+  const rows = RAW.filter(r => dates.includes(r.d));
+  document.getElementById('resultInfo').textContent = dates.length ? `${dates.length}วัน|${rows.length}rec` : 'ไม่พบข้อมูล';
+
+  if (!rows.length) {
+    chart.clear();
+    chart.setOption({ title: { text: 'ไม่พบข้อมูลในช่วงวันที่เลือก', left: 'center', top: 'middle', textStyle: { color: '#999', fontSize: 18, fontWeight: 'normal' } } }, true);
+    return;
+  }
+
+  const times = [...new Set(rows.map(r => r.t))].sort();
+  let min = Infinity, max = -Infinity;
+  rows.forEach(r => { min = Math.min(min, r.l); max = Math.max(max, r.h); });
+  const pad = (max - min) * 0.08;
+  const yMin = Math.floor((min - pad) / 10) * 10, yMax = Math.ceil((max + pad) / 10) * 10;
+  const n = dates.length;
+
+  const series = dates.map((date, k) => {
+    const color = colorOf(date);
+    return {
+      type: 'custom', name: date, z: 2,
+      itemStyle: { color },
+      dimensions: ['time', 'O', 'C', 'L', 'H'],
+      encode: { x: 0, y: [1, 2, 3, 4] },
+      data: rows.filter(r => r.d === date).map(r => [times.indexOf(r.t), r.o, r.c, r.l, r.h]),
+      renderItem(params, api) {
+        const x = api.value(0);
+        const band = api.size([1, 0])[0];
+        const w = Math.max(2, band * 0.85 / n);
+        const cx = api.coord([x, api.value(1)])[0] + (k - (n - 1) / 2) * w;
+        const yo = api.coord([x, api.value(1)])[1], yc = api.coord([x, api.value(2)])[1];
+        const yl = api.coord([x, api.value(3)])[1], yh = api.coord([x, api.value(4)])[1];
+        return {
+          type: 'group',
+          children: [
+            { type: 'line', shape: { x1: cx, y1: yh, x2: cx, y2: yl }, style: { stroke: color, lineWidth: 1.5 } },
+            { type: 'rect', shape: { x: cx - (w - 1) / 2, y: Math.min(yo, yc), width: Math.max(1, w - 1), height: Math.max(Math.abs(yo - yc), 1) }, style: { fill: color } }
+          ]
+        };
+      }
+    };
+  });
+
+  chart.setOption({
+    animation: false,
+    legend: { top: 4, data: dates, textStyle: { fontSize: 12 }, icon: 'roundRect' },
+    grid: { left: 8, right: 14, top: 36, bottom: 44, containLabel: true },
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'shadow' }, confine: true,
+      backgroundColor: 'rgba(255,255,255,0.97)', borderColor: '#ccc', textStyle: { color: '#333', fontSize: 12 },
+      formatter(ps) {
+        if (!ps.length) return '';
+        const t = times[ps[0].data[0]];
+        let h = `<div style="font-weight:bold;margin-bottom:4px;border-bottom:1px solid #eee;padding-bottom:4px">${t} – ${T2[t]}</div>`;
+        ps.forEach(p => {
+          const v = p.data, f = x => x.toFixed(2);
+          h += `<div style="font-size:11px;padding:1px 0"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${p.color};margin-right:6px"></span><b>${p.seriesName}</b> &nbsp;O ${f(v[1])} H ${f(v[4])} L ${f(v[3])} C ${f(v[2])}</div>`;
+        });
+        return h;
+      }
+    },
+    xAxis: {
+      type: 'category', data: times, boundaryGap: true,
+      axisLabel: { fontSize: 10, color: '#666', interval: Math.max(0, Math.ceil(times.length / 14) - 1), formatter: t => t + '\n' + T2[t] },
+      splitLine: { show: true, lineStyle: { color: '#e8e8e8' } }, axisTick: { alignWithLabel: true }
+    },
+    yAxis: { type: 'value', min: yMin, max: yMax, interval: 20, scale: true, axisLabel: { color: '#888', fontSize: 11 }, splitLine: { lineStyle: { color: '#f0f0f0' } } },
+    dataZoom: [{ type: 'inside', xAxisIndex: 0, filterMode: 'none' }],
+    series
+  }, true);
+}
+
+// ===== controls =====
+const elFrom = document.getElementById('dateFrom'), elTo = document.getElementById('dateTo'), elSel = document.getElementById('dateSelect');
+
+function populateSelect() {
+  elSel.innerHTML = '<option value="">เลือกวัน</option>' + ALL_DATES.map(d => `<option value="${d}">${d}</option>`).join('');
+}
+function setDefaults() {
+  if (!ALL_DATES.length) { render(); return; }
+  const today = new Date(); today.setHours(0,0,0,0);
+  let end = today, start = new Date(today); start.setDate(start.getDate() - 5);
+  // ถ้าช่วง 5 วันล่าสุดไม่มีข้อมูล ให้ใช้วันล่าสุดที่มีในข้อมูลแทน
+  if (!ALL_DATES.some(d => { const x = parseKey(d); return x >= start && x <= end; })) {
+    end = parseKey(ALL_DATES[ALL_DATES.length - 1]); start = new Date(end); start.setDate(start.getDate() - 5);
+  }
+  from = start; to = end; limitLast3 = true; added = [];
+  elFrom.value = toInput(from); elTo.value = toInput(to); elSel.value = '';
+  render();
+}
+function onSearch() {
+  const f = elFrom.value ? parseInput(elFrom.value) : null, t = elTo.value ? parseInput(elTo.value) : null;
+  if (f && t && f > t) { alert('วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด'); return; }
+  from = f; to = t; limitLast3 = false; added = []; elSel.value = '';
+  render();
+}
+document.getElementById('btnSearch').addEventListener('click', onSearch);
+document.getElementById('btnReset').addEventListener('click', setDefaults);
+[elFrom, elTo].forEach(e => e.addEventListener('keydown', ev => { if (ev.key === 'Enter') onSearch(); }));
+elSel.addEventListener('change', () => {
+  const v = elSel.value;
+  if (v) { if (!added.includes(v)) added.push(v); }
+  else if (added.length) added.pop();
+  elSel.value = ''; render();
+});
+
+// ===== หมุนแนวนอนอัตโนมัติบนมือถือ =====
+const main = document.getElementById('main');
+function layout() {
+  const w = window.innerWidth, h = window.innerHeight;
+  const portrait = w <= 900 && w < h;
+  document.body.classList.toggle('rotated', portrait);
+  if (portrait) { main.style.width = h + 'px'; main.style.height = w + 'px'; main.style.left = w + 'px'; }
+  else { main.style.width = main.style.height = main.style.left = ''; }
+  setTimeout(() => chart.resize(), 50);
+}
+window.addEventListener('resize', layout);
+window.addEventListener('orientationchange', () => setTimeout(layout, 300));
+
+// ===== init =====
+layout();
+fetch(CSV_FILE + '?_=' + Date.now())
+  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+  .then(txt => { initData(parseCsv(txt)); populateSelect(); setDefaults(); })
+  .catch(err => {
+    chart.setOption({ title: { text: 'โหลดไฟล์ ' + CSV_FILE + ' ไม่สำเร็จ\n(ต้องเปิดผ่าน web server เช่น http://localhost/ ไม่ใช่ file://)', left: 'center', top: 'middle', textStyle: { color: '#c62828', fontSize: 14, fontWeight: 'normal' } } }, true);
+    console.error(err);
+  });
+</script>
+</body>
+</html>
