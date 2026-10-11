@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏆 ระบบบันทึกคะแนนการประกวด</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Segoe UI', 'Sarabun', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+    padding: 10px;
+}
+.container { max-width: 1400px; margin: 0 auto; }
+header {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+header h1 { color: #4a5fc1; font-size: 1.6em; }
+header p { color: #666; margin-top: 5px; font-size: 0.95em; }
+.judge-info { margin-top: 8px; color: #666; }
+.save-status {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 12px;
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-radius: 20px;
+    font-size: 0.85em;
+}
+.save-status.saving { background: #fff3e0; color: #e65100; }
+.save-status.error { background: #ffebee; color: #c62828; }
+.card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.card label { display: block; font-weight: bold; margin-bottom: 8px; }
+select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1em;
+    background: #fff;
+}
+.judge-btn {
+    display: block;
+    padding: 12px 20px;
+    background: #4a5fc1;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    margin: 8px 0;
+    cursor: pointer;
+    font-size: 1em;
+    text-align: left;
+    transition: 0.2s;
+    width: 100%;
+}
+.judge-btn:hover { background: #3a4ea8; transform: translateX(5px); }
+.toolbar { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
+.btn {
+    padding: 10px 20px;
+    background: #fff;
+    color: #4a5fc1;
+    border: 2px solid #4a5fc1;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1em;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn:hover { background: #f0f3ff; }
+.btn-primary { background: #4a5fc1; color: #fff; }
+.btn-primary:hover { background: #3a4ea8; }
+.btn-danger { background: #e53935; color: #fff; border-color: #e53935; }
+.btn-danger:hover { background: #c62828; }
+.info-box {
+    background: #e3f2fd;
+    border-left: 4px solid #1976d2;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+}
+.page { display: none; }
+.page.active { display: block; }
+
+/* ===== Summary Bar ===== */
+.scoring-summary {
+    background: #fff;
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+}
+.summary-item { display: flex; flex-direction: column; }
+.summary-item .label { font-size: 0.8em; color: #888; }
+.summary-item .value { font-size: 1.2em; font-weight: bold; color: #4a5fc1; }
+
+/* ===== Desktop Table ===== */
+.scoring-table-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    overflow-x: auto;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+}
+.scoring-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 900px;
+}
+.scoring-table thead th {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    padding: 12px 10px;
+    text-align: center;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-right: 1px solid rgba(255,255,255,0.2);
+    font-size: 0.9em;
+}
+.scoring-table thead th:last-child { border-right: none; }
+.scoring-table thead th.criteria-header { min-width: 110px; }
+.scoring-table thead th .weight-label {
+    display: block;
+    font-size: 0.75em;
+    opacity: 0.85;
+    font-weight: normal;
+    margin-top: 2px;
+}
+.scoring-table thead th .criteria-name {
+    display: block;
+    font-size: 0.95em;
+}
+.scoring-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+    vertical-align: middle;
+    background: #fff;
+}
+.scoring-table tbody tr:hover td { background: #f9faff; }
+.scoring-table tbody tr.top-rank-1 td { background: #fff8e1; }
+.scoring-table tbody tr.top-rank-2 td { background: #f5f5f5; }
+.scoring-table tbody tr.top-rank-3 td { background: #fbe9e7; }
+.col-no { width: 50px; font-weight: bold; color: #666; }
+.col-title { text-align: left !important; min-width: 200px; }
+.col-title .work-title { font-weight: 600; color: #333; display: block; }
+.col-title .work-author { font-size: 0.85em; color: #888; display: block; margin-top: 2px; }
+.col-rank { width: 80px; font-size: 1.3em; }
+.col-total {
+    width: 100px;
+    font-weight: bold;
+    color: #4a5fc1;
+    font-size: 1.05em;
+    background: #f5f7ff !important;
+}
+.rank-badge { display: inline-block; font-size: 1.4em; }
+.rank-number {
+    display: inline-block;
+    background: #e0e7ff;
+    color: #4a5fc1;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 0.95em;
+}
+
+/* ===== Input ===== */
+.score-input {
+    width: 70px;
+    padding: 6px 4px;
+    border: 2px solid #e0e7ff;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.95em;
+    background: #fff;
+    transition: all 0.2s;
+}
+.score-input:focus {
+    border-color: #4a5fc1;
+    box-shadow: 0 0 0 3px rgba(74, 95, 193, 0.15);
+    outline: none;
+}
+.score-input.invalid { border-color: #e53935; background: #ffebee; }
+.score-input.saved { border-color: #4caf50; background: #e8f5e9; }
+
+/* ===== Ranking Table ===== */
+.rank-table {
+    width: 100%;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+.rank-table th { background: #4a5fc1; color: #fff; padding: 12px; text-align: left; }
+.rank-table td { padding: 12px; border-bottom: 1px solid #eee; }
+.rank-1 td { background: #fff8e1; font-weight: bold; }
+.rank-2 td { background: #f5f5f5; }
+.rank-3 td { background: #fbe9e7; }
+
+/* ===== Mobile Cards ===== */
+.mobile-cards { display: none; }
+.work-card {
+    background: #fff;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.work-card .work-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    padding: 15px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+.work-card .work-header h3 { flex: 1; min-width: 200px; margin: 0; font-size: 1.1em; }
+.work-card .total-score {
+    background: rgba(255,255,255,0.25);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+.work-card .sub-info {
+    padding: 8px 15px;
+    background: #e3f2fd;
+    font-size: 0.85em;
+    color: #1565c0;
+}
+.criteria-table { width: 100%; border-collapse: collapse; }
+.criteria-table th, .criteria-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+.criteria-table th { background: #f5f7ff; font-weight: 600; }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+    .scoring-table-wrapper { display: none !important; }
+    .mobile-cards { display: block !important; }
+    header h1 { font-size: 1.2em; }
+    .work-card .work-header { flex-direction: column; align-items: flex-start; }
+    .scoring-summary { gap: 12px; }
+    .summary-item .value { font-size: 1em; }
+}
+@media (min-width: 901px) {
+    .mobile-cards { display: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ==================== หน้าหลัก ==================== -->
+<div id="pageHome" class="page active">
+    <header>
+        <h1>🏆 ระบบบันทึกคะแนนการประกวดผลงาน</h1>
+        <p>เลือกประเภทและกรรมการเพื่อเริ่มให้คะแนน (Demo Mode - ข้อมูลเก็บในเบราว์เซอร์)</p>
+    </header>
+
+    <div class="info-box">
+        💡 <strong>Demo Mode:</strong> ข้อมูลเก็บใน localStorage ของเบราว์เซอร์
+        <button onclick="resetAll()" class="btn btn-danger" style="float:right;padding:4px 12px;font-size:0.85em;">ล้างข้อมูลทั้งหมด</button>
+    </div>
+
+    <div class="card">
+        <label>📂 ประเภทผลงาน:</label>
+        <select id="categorySelect" onchange="loadJudges()">
+            <option value="">-- เลือกประเภท --</option>
+        </select>
+    </div>
+
+    <div class="card" id="judgeCard" style="display:none">
+        <label>👤 เลือกกรรมการ:</label>
+        <div id="judgeList"></div>
+    </div>
+
+    <div class="card" id="rankingCard" style="display:none">
+        <label>📊 ดูอันดับ:</label>
+        <button class="judge-btn" onclick="showRanking()">ดูอันดับผลงานและกรรมการ →</button>
+    </div>
+</div>
+
+<!-- ==================== หน้าบันทึกคะแนน ==================== -->
+<div id="pageScoring" class="page">
+    <header>
+        <h1 id="categoryName">กำลังโหลด...</h1>
+        <div class="judge-info">กรรมการ: <strong id="judgeName"></strong></div>
+        <div class="save-status" id="saveStatus">✓ พร้อมบันทึก</div>
+    </header>
+
+    <div class="toolbar">
+        <button class="btn" onclick="showPage('pageHome')">← กลับหน้าหลัก</button>
+        <button class="btn btn-primary" onclick="showRanking()">ดูอันดับ →</button>
+    </div>
+
+    <div class="scoring-summary">
+        <div class="summary-item">
+            <span class="label">จำนวนผลงาน</span>
+            <span class="value" id="sumWorks">0</span>
+        </div>
+        <div class="summary-item">
+            <span class="label">จำนวนเกณฑ์</span>
+            <span class="value" id="sumCriteria">0</span>
+        </div>
+        <div class="summary-item">
+            <span class="label">กรอกแล้ว</span>
+            <span class="value" id="sumFilled">0 / 0</span>
+        </div>
+        <div class="summary-item">
+            <span class="label">สถานะ</span>
+            <span class="value" id="sumStatus" style="color:#e65100;">กำลังกรอก...</span>
+        </div>
+    </div>
+
+    <!-- ตาราง Desktop -->
+    <div class="scoring-table-wrapper">
+        <table class="scoring-table" id="scoringTable">
+            <thead id="scoringTableHead"></thead>
+            <tbody id="scoringTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- Card Mobile -->
+    <div class="mobile-cards" id="scoringArea"></div>
+</div>
+
+<!-- ==================== หน้าอันดับ ==================== -->
+<div id="pageRanking" class="page">
+    <header>
+        <h1>🏆 อันดับการประกวด</h1>
+    </header>
+
+    <div class="toolbar">
+        <button class="btn" onclick="showPage('pageHome')">← กลับหน้าหลัก</button>
+    </div>
+
+    <div class="card">
+        <label>เลือกประเภท:</label>
+        <select id="rankCategorySelect" onchange="renderRanking()"></select>
+    </div>
+
+    <div id="rankingArea"></div>
+</div>
+
+</div>
+
+<script>
+// ============================================================
+// 🗄️ ฐานข้อมูลจำลอง (localStorage)
+// ============================================================
+const DB_KEY = 'contest_db_v2';
+
+function initDB() {
+    if (localStorage.getItem(DB_KEY)) return;
+    const db = {
+        categories: [
+            { id: 1, name: 'ประเภทที่ 1: นวัตกรรมด้านการศึกษา' },
+            { id: 2, name: 'ประเภทที่ 2: นวัตกรรมด้านเทคโนโลยี' },
+            { id: 3, name: 'ประเภทที่ 3: นวัตกรรมด้านสังคม' },
+            { id: 4, name: 'ประเภทที่ 4: นวัตกรรมด้านสิ่งแวดล้อม' },
+            { id: 5, name: 'ประเภทที่ 5: นวัตกรรมด้านเศรษฐกิจ' }
+        ],
+        works: [
+            { id: 1, category_id: 1, title: 'ระบบสอนออนไลน์อัจฉริยะ', author: 'ทีม A' },
+            { id: 2, category_id: 1, title: 'แอปเรียนรู้ภาษาไทย', author: 'ทีม B' },
+            { id: 3, category_id: 1, title: 'แพลตฟอร์มสอบออนไลน์', author: 'ทีม C' },
+            { id: 4, category_id: 1, title: 'หุ่นยนต์ช่วยสอน', author: 'ทีม D' },
+            { id: 5, category_id: 1, title: 'สื่อ VR สำหรับเด็ก', author: 'ทีม E' },
+            { id: 6, category_id: 1, title: 'ระบบติวเตอร์ AI', author: 'ทีม F' },
+            { id: 7, category_id: 1, title: 'เกมการศึกษา', author: 'ทีม G' },
+            { id: 8, category_id: 1, title: 'ห้องเรียนเสมือนจริง', author: 'ทีม H' },
+            { id: 9, category_id: 2, title: 'AI ตรวจโรคพืช', author: 'ทีม I' },
+            { id: 10, category_id: 2, title: 'ระบบ IoT ฟาร์มอัจฉริยะ', author: 'ทีม J' },
+            { id: 11, category_id: 2, title: 'Blockchain สำหรับเอกสาร', author: 'ทีม K' },
+            { id: 12, category_id: 2, title: 'แอปแปลภาษามือ', author: 'ทีม L' },
+            { id: 13, category_id: 2, title: 'ระบบจราจรอัจฉริยะ', author: 'ทีม M' },
+            { id: 14, category_id: 2, title: 'Robot ส่งของ', author: 'ทีม N' },
+            { id: 15, category_id: 3, title: 'แอปแจ้งเหตุฉุกเฉิน', author: 'ทีม O' },
+            { id: 16, category_id: 3, title: 'ระบบอาสาสมัครออนไลน์', author: 'ทีม P' },
+            { id: 17, category_id: 3, title: 'แพลตฟอร์มผู้สูงอายุ', author: 'ทีม Q' },
+            { id: 18, category_id: 3, title: 'ชุมชนแบ่งปัน', author: 'ทีม R' },
+            { id: 19, category_id: 3, title: 'ระบบบริจาคโปร่งใส', author: 'ทีม S' },
+            { id: 20, category_id: 3, title: 'แอปสุขภาพจิต', author: 'ทีม T' },
+            { id: 21, category_id: 3, title: 'เครือข่ายผู้พิการ', author: 'ทีม U' },
+            { id: 22, category_id: 4, title: 'ระบบจัดการขยะอัจฉริยะ', author: 'ทีม V' },
+            { id: 23, category_id: 4, title: 'พลังงานแสงอาทิตย์ชุมชน', author: 'ทีม W' },
+            { id: 24, category_id: 4, title: 'แอปติดตามคาร์บอน', author: 'ทีม X' },
+            { id: 25, category_id: 4, title: 'ระบบรดน้ำอัตโนมัติ', author: 'ทีม Y' },
+            { id: 26, category_id: 4, title: 'รีไซเคิลออนไลน์', author: 'ทีม Z' },
+            { id: 27, category_id: 5, title: 'แพลตฟอร์ม OTOP ออนไลน์', author: 'ทีม AA' },
+            { id: 28, category_id: 5, title: 'ระบบบัญชี SME', author: 'ทีม BB' },
+            { id: 29, category_id: 5, title: 'ตลาดเกษตรกรดิจิทัล', author: 'ทีม CC' },
+            { id: 30, category_id: 5, title: 'แอปท่องเที่ยวชุมชน', author: 'ทีม DD' },
+            { id: 31, category_id: 5, title: 'ระบบโลจิสติกส์ร่วม', author: 'ทีม EE' },
+            { id: 32, category_id: 5, title: 'แพลตฟอร์มระดมทุน', author: 'ทีม FF' }
+        ],
+        judges: [
+            { id: 1, name: 'ดร.สมชาย วิชาการ' },
+            { id: 2, name: 'อ.มาลี สร้างสรรค์' },
+            { id: 3, name: 'ผศ.วิชัย นวัตกรรม' },
+            { id: 4, name: 'รศ.พรทิพย์ พัฒนา' },
+            { id: 5, name: 'ดร.ธนากร วิจัย' },
+            { id: 6, name: 'อ.สุภาพร เทคโนโลยี' }
+        ],
+        judge_categories: [
+            { judge_id: 1, category_id: 1 }, { judge_id: 2, category_id: 1 },
+            { judge_id: 3, category_id: 1 }, { judge_id: 4, category_id: 1 },
+            { judge_id: 5, category_id: 1 },
+            { judge_id: 1, category_id: 2 }, { judge_id: 2, category_id: 2 },
+            { judge_id: 3, category_id: 2 }, { judge_id: 4, category_id: 2 },
+            { judge_id: 5, category_id: 2 }, { judge_id: 6, category_id: 2 },
+            { judge_id: 1, category_id: 3 }, { judge_id: 3, category_id: 3 },
+            { judge_id: 4, category_id: 3 }, { judge_id: 6, category_id: 3 },
+            { judge_id: 1, category_id: 4 }, { judge_id: 2, category_id: 4 },
+            { judge_id: 3, category_id: 4 }, { judge_id: 4, category_id: 4 },
+            { judge_id: 5, category_id: 4 }, { judge_id: 6, category_id: 4 },
+            { judge_id: 2, category_id: 5 }, { judge_id: 3, category_id: 5 },
+            { judge_id: 4, category_id: 5 }, { judge_id: 5, category_id: 5 },
+            { judge_id: 6, category_id: 5 }
+        ],
+        criteria: [
+            { id: 1, category_id: 1, name: 'ความคิดสร้างสรรค์', weight: 25 },
+            { id: 2, category_id: 1, name: 'ประโยชน์ใช้งานจริง', weight: 25 },
+            { id: 3, category_id: 1, name: 'ความเป็นไปได้', weight: 20 },
+            { id: 4, category_id: 1, name: 'ความสมบูรณ์ของผลงาน', weight: 20 },
+            { id: 5, category_id: 1, name: 'การนำเสนอ', weight: 10 },
+            { id: 6, category_id: 2, name: 'นวัตกรรมทางเทคนิค', weight: 25 },
+            { id: 7, category_id: 2, name: 'ความซับซ้อนของระบบ', weight: 20 },
+            { id: 8, category_id: 2, name: 'การประยุกต์ใช้', weight: 20 },
+            { id: 9, category_id: 2, name: 'ประสิทธิภาพ', weight: 15 },
+            { id: 10, category_id: 2, name: 'ความเสถียร', weight: 10 },
+            { id: 11, category_id: 2, name: 'การนำเสนอ', weight: 10 },
+            { id: 12, category_id: 3, name: 'ผลกระทบทางสังคม', weight: 35 },
+            { id: 13, category_id: 3, name: 'ความยั่งยืน', weight: 25 },
+            { id: 14, category_id: 3, name: 'การมีส่วนร่วม', weight: 25 },
+            { id: 15, category_id: 3, name: 'ความคิดสร้างสรรค์', weight: 15 },
+            { id: 16, category_id: 4, name: 'ผลกระทบต่อสิ่งแวดล้อม', weight: 30 },
+            { id: 17, category_id: 4, name: 'ความเป็นมิตรกับธรรมชาติ', weight: 20 },
+            { id: 18, category_id: 4, name: 'ความยั่งยืน', weight: 20 },
+            { id: 19, category_id: 4, name: 'นวัตกรรม', weight: 20 },
+            { id: 20, category_id: 4, name: 'การขยายผล', weight: 10 },
+            { id: 21, category_id: 5, name: 'มูลค่าทางเศรษฐกิจ', weight: 25 },
+            { id: 22, category_id: 5, name: 'ความเป็นไปได้ทางการตลาด', weight: 20 },
+            { id: 23, category_id: 5, name: 'โมเดลธุรกิจ', weight: 20 },
+            { id: 24, category_id: 5, name: 'การขยายขนาด', weight: 15 },
+            { id: 25, category_id: 5, name: 'การสร้างงาน', weight: 10 },
+            { id: 26, category_id: 5, name: 'การนำเสนอ', weight: 10 }
+        ],
+        scores: {}
+    };
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+
+function getDB() { return JSON.parse(localStorage.getItem(DB_KEY)); }
+function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function resetAll() {
+    if (confirm('ล้างข้อมูลคะแนนทั้งหมด?')) {
+        localStorage.removeItem(DB_KEY);
+        initDB();
+        location.reload();
+    }
+}
+
+// ============================================================
+// 🎨 Controllers
+// ============================================================
+let currentCategoryId = null;
+let currentJudgeId = null;
+let currentData = null;
+let saveQueue = {};
+let saveTimer = null;
+
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    window.scrollTo(0, 0);
+}
+
+// ---------- หน้าหลัก ----------
+function initHome() {
+    const db = getDB();
+    const sel = document.getElementById('categorySelect');
+    sel.innerHTML = '<option value="">-- เลือกประเภท --</option>';
+    db.categories.forEach(c => {
+        sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+    });
+}
+
+function loadJudges() {
+    const catId = parseInt(document.getElementById('categorySelect').value);
+    if (!catId) {
+        document.getElementById('judgeCard').style.display = 'none';
+        document.getElementById('rankingCard').style.display = 'none';
+        return;
+    }
+    currentCategoryId = catId;
+    const db = getDB();
+    const judges = db.judge_categories
+        .filter(jc => jc.category_id === catId)
+        .map(jc => db.judges.find(j => j.id === jc.judge_id));
+
+    const list = document.getElementById('judgeList');
+    list.innerHTML = '';
+    judges.forEach(j => {
+        const btn = document.createElement('button');
+        btn.className = 'judge-btn';
+        btn.textContent = `👤 ${j.name}`;
+        btn.onclick = () => startScoring(catId, j.id);
+        list.appendChild(btn);
+    });
+    document.getElementById('judgeCard').style.display = 'block';
+    document.getElementById('rankingCard').style.display = 'block';
+}
+
+// ---------- หน้าบันทึกคะแนน ----------
+function startScoring(catId, judgeId) {
+    currentCategoryId = catId;
+    currentJudgeId = judgeId;
+    const db = getDB();
+    const cat = db.categories.find(c => c.id === catId);
+    const judge = db.judges.find(j => j.id === judgeId);
+
+    currentData = {
+        category: cat,
+        judge: judge,
+        works: db.works.filter(w => w.category_id === catId),
+        criteria: db.criteria.filter(c => c.category_id === catId),
+        scores: db.scores
+    };
+
+    document.getElementById('categoryName').textContent = cat.name;
+    document.getElementById('judgeName').textContent = judge.name;
+    document.getElementById('sumWorks').textContent = currentData.works.length;
+    document.getElementById('sumCriteria').textContent = currentData.criteria.length;
+
+    renderDesktopTable();
+    renderMobileCards();
+    updateFilledCount();
+    showPage('pageScoring');
+}
+
+function renderDesktopTable() {
+    const thead = document.getElementById('scoringTableHead');
+    const tbody = document.getElementById('scoringTableBody');
+    const { works, criteria, scores } = currentData;
+
+    let headHtml = '<tr>';
+    headHtml += '<th class="col-no">ลำดับ</th>';
+    headHtml += '<th class="col-title">ชื่อผลงาน</th>';
+    headHtml += '<th class="col-rank">Rank</th>';
+    headHtml += '<th class="col-total">คะแนนรวม<br><span class="weight-label">(หลังถ่วงน้ำหนัก)</span></th>';
+    criteria.forEach(c => {
+        headHtml += `<th class="criteria-header">
+            <span class="criteria-name">${c.name}</span>
+            <span class="weight-label">น้ำหนัก ${c.weight}%</span>
+        </th>`;
+    });
+    headHtml += '</tr>';
+    thead.innerHTML = headHtml;
+
+    let bodyHtml = '';
+    works.forEach((work, idx) => {
+        bodyHtml += `<tr data-work-id="${work.id}" id="row_${work.id}">`;
+        bodyHtml += `<td class="col-no">${idx + 1}</td>`;
+        bodyHtml += `<td class="col-title">
+            <span class="work-title">${work.title}</span>
+            <span class="work-author">โดย ${work.author || '-'}</span>
+        </td>`;
+        bodyHtml += `<td class="col-rank" id="rank_${work.id}"><span class="rank-number">-</span></td>`;
+        bodyHtml += `<td class="col-total" id="total_${work.id}">0.00</td>`;
+
+        criteria.forEach(c => {
+            const key = `${currentJudgeId}_${work.id}_${c.id}`;
+            const savedScore = scores[key] !== undefined ? scores[key] : '';
+            bodyHtml += `<td>
+                <input type="number" min="1" max="10" step="0.1"
+                       class="score-input"
+                       data-work="${work.id}"
+                       data-criteria="${c.id}"
+                       data-weight="${c.weight}"
+                       value="${savedScore}"
+                       oninput="onScoreChange(this)"
+                       onblur="onScoreBlur(this)">
+            </td>`;
+        });
+        bodyHtml += '</tr>';
+    });
+    tbody.innerHTML = bodyHtml;
+
+    document.querySelectorAll('#scoringTable .score-input').forEach(inp => {
+        if (inp.value) recalcTotal(inp.dataset.work);
+    });
+    recalcAllRanks();
+}
+
+function renderMobileCards() {
+    const area = document.getElementById('scoringArea');
+    const { works, criteria, scores } = currentData;
+    let html = '';
+
+    works.forEach(work => {
+        html += `<div class="work-card">
+            <div class="work-header">
+                <h3>${work.title}</h3>
+                <span class="total-score" id="m_total_${work.id}">คะแนนรวม: 0.00</span>
+            </div>
+            <div class="sub-info">
+                โดย ${work.author || '-'} | Rank: <span id="m_rank_${work.id}">-</span>
+            </div>
+            <table class="criteria-table">
+                <thead><tr><th>เกณฑ์</th><th>น้ำหนัก</th><th>คะแนน (1-10)</th></tr></thead>
+                <tbody>`;
+        criteria.forEach(c => {
+            const key = `${currentJudgeId}_${work.id}_${c.id}`;
+            const savedScore = scores[key] !== undefined ? scores[key] : '';
+            html += `<tr>
+                <td>${c.name}</td>
+                <td class="weight">${c.weight}%</td>
+                <td>
+                    <input type="number" min="1" max="10" step="0.1"
+                           class="score-input"
+                           data-work="${work.id}"
+                           data-criteria="${c.id}"
+                           data-weight="${c.weight}"
+                           value="${savedScore}"
+                           oninput="onScoreChange(this)"
+                           onblur="onScoreBlur(this)">
+                </td>
+            </tr>`;
+        });
+        html += `</tbody></table></div>`;
+    });
+    area.innerHTML = html;
+}
+
+// ---------- Event Handlers ----------
+function onScoreChange(input) {
+    const val = parseFloat(input.value);
+    if (input.value !== '' && (isNaN(val) || val < 1 || val > 10)) {
+        input.classList.add('invalid');
+        input.classList.remove('saved');
+        return;
+    }
+    input.classList.remove('invalid');
+
+    recalcTotal(input.dataset.work);
+    recalcAllRanks();
+    updateFilledCount();
+
+    if (input.value !== '') {
+        queueSave(input.dataset.work, input.dataset.criteria, val);
+    }
+}
+
+function onScoreBlur(input) {
+    if (input.value !== '' && !input.classList.contains('invalid')) {
+        input.classList.add('saved');
+        setTimeout(() => input.classList.remove('saved'), 1500);
+    }
+}
+
+function recalcTotal(workId) {
+    let total = 0;
+    document.querySelectorAll(`input[data-work="${workId}"]`).forEach(inp => {
+        const v = parseFloat(inp.value) || 0;
+        const w = parseFloat(inp.dataset.weight);
+        total += v * w / 100;
+    });
+    const dtEl = document.getElementById(`total_${workId}`);
+    if (dtEl) dtEl.textContent = total.toFixed(2);
+    const mEl = document.getElementById(`m_total_${workId}`);
+    if (mEl) mEl.textContent = `คะแนนรวม: ${total.toFixed(2)}`;
+}
+
+function recalcAllRanks() {
+    if (!currentData) return;
+    const workTotals = currentData.works.map(w => {
+        let total = 0;
+        document.querySelectorAll(`input[data-work="${w.id}"]`).forEach(inp => {
+            const v = parseFloat(inp.value) || 0;
+            const weight = parseFloat(inp.dataset.weight);
+            total += v * weight / 100;
+        });
+        return { id: w.id, total };
+    });
+
+    workTotals.sort((a, b) => b.total - a.total);
+    const rankMap = {};
+    let currentRank = 1;
+    workTotals.forEach((item, idx) => {
+        if (idx > 0 && item.total < workTotals[idx - 1].total) currentRank = idx + 1;
+        rankMap[item.id] = currentRank;
+    });
+
+    currentData.works.forEach(w => {
+        const rank = rankMap[w.id];
+        const total = workTotals.find(x => x.id === w.id).total;
+
+        const rankEl = document.getElementById(`rank_${w.id}`);
+        const rowEl = document.getElementById(`row_${w.id}`);
+        if (rankEl) {
+            if (total === 0) {
+                rankEl.innerHTML = '<span class="rank-number">-</span>';
+            } else {
+                const medal = ['🥇','🥈','🥉'][rank - 1];
+                rankEl.innerHTML = medal
+                    ? `<span class="rank-badge">${medal}</span>`
+                    : `<span class="rank-number">${rank}</span>`;
+            }
+        }
+        if (rowEl) {
+            rowEl.classList.remove('top-rank-1', 'top-rank-2', 'top-rank-3');
+            if (total > 0 && rank <= 3) rowEl.classList.add(`top-rank-${rank}`);
+        }
+
+        const mRankEl = document.getElementById(`m_rank_${work.id}`);
+        if (mRankEl) {
+            if (total === 0) mRankEl.textContent = '-';
+            else {
+                const medal = ['🥇','🥈','🥉'][rank - 1];
+                mRankEl.textContent = medal ? `${medal} (${rank})` : rank;
+            }
+        }
+    });
+}
+
+function updateFilledCount() {
+    if (!currentData) return;
+    const totalCells = currentData.works.length * currentData.criteria.length;
+    let filled = 0;
+    document.querySelectorAll('#scoringTable .score-input').forEach(inp => {
+        if (inp.value !== '') filled++;
+    });
+    document.getElementById('sumFilled').textContent = `${filled} / ${totalCells}`;
+    const statusEl = document.getElementById('sumStatus');
+    if (filled >= totalCells) {
+        statusEl.textContent = '✓ ครบทุกช่อง';
+        statusEl.style.color = '#2e7d32';
+    } else {
+        statusEl.textContent = 'กำลังกรอก...';
+        statusEl.style.color = '#e65100';
+    }
+}
+
+// ---------- Auto-Save ----------
+function queueSave(workId, criteriaId, score) {
+    const key = `${workId}_${criteriaId}`;
+    saveQueue[key] = { judgeId: currentJudgeId, workId, criteriaId, score };
+    setStatus('⏳ กำลังบันทึก...', 'saving');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flushSave, 300);
+}
+
+function flushSave() {
+    const items = Object.values(saveQueue);
+    saveQueue = {};
+    if (items.length === 0) return;
+    const db = getDB();
+    items.forEach(item => {
+        const key = `${item.judgeId}_${item.workId}_${item.criteriaId}`;
+        db.scores[key] = item.score;
+    });
+    saveDB(db);
+    currentData.scores = db.scores;
+    const now = new Date().toLocaleTimeString('th-TH');
+    setStatus(`✓ บันทึกแล้ว (${now})`, '');
+}
+
+function setStatus(msg, cls) {
+    const el = document.getElementById('saveStatus');
+    el.textContent = msg;
+    el.className = 'save-status ' + (cls || '');
+}
+
+// ---------- Ranking ----------
+function showRanking() {
+    const sel = document.getElementById('rankCategorySelect');
+    const db = getDB();
+    sel.innerHTML = '';
+    db.categories.forEach(c => {
+        sel.innerHTML += `<option value="${c.id}" ${c.id === currentCategoryId ? 'selected' : ''}>${c.name}</option>`;
+    });
+    renderRanking();
+    showPage('pageRanking');
+}
+
+function renderRanking() {
+    const catId = parseInt(document.getElementById('rankCategorySelect').value);
+    const db = getDB();
+    const works = db.works.filter(w => w.category_id === catId);
+    const criteria = db.criteria.filter(c => c.category_id === catId);
+    const judgesInCat = db.judge_categories
+        .filter(jc => jc.category_id === catId)
+        .map(jc => db.judges.find(j => j.id === jc.judge_id));
+
+    const workScores = works.map(w => {
+        let total = 0, judgeCount = 0;
+        judgesInCat.forEach(j => {
+            let jTotal = 0, hasAny = false;
+            criteria.forEach(c => {
+                const key = `${j.id}_${w.id}_${c.id}`;
+                const s = db.scores[key];
+                if (s !== undefined) { jTotal += s * c.weight / 100; hasAny = true; }
+            });
+            if (hasAny) { total += jTotal; judgeCount++; }
+        });
+        return { work: w, total, avg: judgeCount > 0 ? total / judgeCount : 0, judgeCount };
+    });
+    workScores.sort((a, b) => b.total - a.total);
+
+    const judgeStats = judgesInCat.map(j => {
+        let sumWeighted = 0, count = 0;
+        works.forEach(w => {
+            let wTotal = 0, hasAny = false;
+            criteria.forEach(c => {
+                const key = `${j.id}_${w.id}_${c.id}`;
+                const s = db.scores[key];
+                if (s !== undefined) { wTotal += s * c.weight / 100; hasAny = true; }
+            });
+            if (hasAny) { sumWeighted += wTotal; count++; }
+        });
+        return { judge: j, avg: count > 0 ? sumWeighted / count : 0, scoredWorks: count };
+    });
+    judgeStats.sort((a, b) => b.avg - a.avg);
+
+    let html = '<div class="card"><h2>📊 อันดับผลงาน</h2>';
+    html += '<table class="rank-table"><thead><tr><th>อันดับ</th><th>ผลงาน</th><th>ผู้แต่ง</th><th>กรรมการให้</th><th>คะแนนรวม</th><th>คะแนนเฉลี่ย</th></tr></thead><tbody>';
+    workScores.forEach((w, i) => {
+        const cls = i < 3 ? `rank-${i+1}` : '';
+        const medal = ['🥇','🥈','🥉'][i] || (i+1);
+        html += `<tr class="${cls}"><td>${medal}</td><td>${w.work.title}</td><td>${w.work.author}</td><td>${w.judgeCount}/${judgesInCat.length}</td><td><strong>${w.total.toFixed(2)}</strong></td><td>${w.avg.toFixed(2)}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+
+    html += '<div class="card"><h2>👥 Ranking การให้คะแนนของกรรมการแต่ละท่าน</h2>';
+    judgesInCat.forEach(j => {
+        const jWorks = works.map(w => {
+            let total = 0, filled = 0;
+            criteria.forEach(c => {
+                const key = `${j.id}_${w.id}_${c.id}`;
+                const s = db.scores[key];
+                if (s !== undefined) { total += s * c.weight / 100; filled++; }
+            });
+            return { work: w, total, filled };
+        }).filter(x => x.filled > 0).sort((a, b) => b.total - a.total);
+
+        html += `<div style="margin-top:15px;padding:12px;background:#f5f7ff;border-radius:8px;">
+            <strong>👤 ${j.name}</strong>
+            <table class="rank-table">
+                <thead><tr><th>อันดับ</th><th>ผลงาน</th><th>คะแนนถ่วงน้ำหนัก</th></tr></thead><tbody>`;
+        if (jWorks.length === 0) {
+            html += '<tr><td colspan="3" style="text-align:center;color:#999;">ยังไม่มีคะแนน</td></tr>';
+        } else {
+            jWorks.forEach((w, i) => {
+                const medal = ['🥇','🥈','🥉'][i] || (i+1);
+                const cls = i < 3 ? `rank-${i+1}` : '';
+                html += `<tr class="${cls}"><td>${medal}</td><td>${w.work.title}</td><td><strong>${w.total.toFixed(2)}</strong></td></tr>`;
+            });
+        }
+        html += '</tbody></table></div>';
+    });
+    html += '</div>';
+
+    html += '<div class="card"><h2>📈 สรุปคะแนนเฉลี่ยของกรรมการ</h2>';
+    html += '<table class="rank-table"><thead><tr><th>อันดับ</th><th>กรรมการ</th><th>จำนวนผลงาน</th><th>คะแนนเฉลี่ย</th></tr></thead><tbody>';
+    judgeStats.forEach((j, i) => {
+        html += `<tr><td>${i+1}</td><td>${j.judge.name}</td><td>${j.scoredWorks}</td><td><strong>${j.avg.toFixed(2)}</strong></td></tr>`;
+    });
+    html += '</tbody></table></div>';
+
+    document.getElementById('rankingArea').innerHTML = html;
+}
+
+// ---------- Events ----------
+window.addEventListener('beforeunload', (e) => {
+    if (Object.keys(saveQueue).length > 0) {
+        flushSave();
+        e.preventDefault();
+        e.returnValue = 'มีคะแนนยังไม่ได้บันทึก';
+    }
+});
+
+// ---------- Init ----------
+initDB();
+initHome();
+</script>
+</body>
+</html>
