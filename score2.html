@@ -696,7 +696,6 @@ function recalcTotal(workId) {
     const mEl = document.getElementById(`m_total_${workId}`);
     if (mEl) mEl.textContent = `คะแนนรวม: ${total.toFixed(2)}`;
 }
-
 function recalcAllRanks() {
     if (!currentData) return;
     const workTotals = currentData.works.map(w => {
@@ -721,6 +720,7 @@ function recalcAllRanks() {
         const rank = rankMap[w.id];
         const total = workTotals.find(x => x.id === w.id).total;
 
+        // Desktop
         const rankEl = document.getElementById(`rank_${w.id}`);
         const rowEl = document.getElementById(`row_${w.id}`);
         if (rankEl) {
@@ -738,16 +738,25 @@ function recalcAllRanks() {
             if (total > 0 && rank <= 3) rowEl.classList.add(`top-rank-${rank}`);
         }
 
-        const mRankEl = document.getElementById(`m_rank_${work.id}`);
+        // Mobile ← แก้ตรงนี้: work.id → w.id
+        const mRankEl = document.getElementById(`m_rank_${w.id}`);
         if (mRankEl) {
-            if (total === 0) mRankEl.textContent = '-';
-            else {
+            if (total === 0) {
+                mRankEl.textContent = '-';
+            } else {
                 const medal = ['🥇','🥈','🥉'][rank - 1];
                 mRankEl.textContent = medal ? `${medal} (${rank})` : rank;
             }
         }
     });
 }
+
+
+
+
+
+
+            
 
 function updateFilledCount() {
     if (!currentData) return;
