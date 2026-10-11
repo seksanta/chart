@@ -135,13 +135,13 @@ tr.done:hover td.c1,tr.done:hover td.c2,tr.done:hover td.c3,tr.done:hover td.c4{
 /* =====================================================================
    ตั้งค่าการเชื่อมต่อฐานข้อมูล (ถ้าไม่ตั้งค่า จะทำงานโหมดทดลอง เก็บคะแนนในเครื่องนี้)
    -------------------------------------------------------------------
-   ใช้ร่วมกับ PHP: ให้ PHP พิมพ์ข้อมูลไว้ก่อน <script> นี้
-     <script>window.CONTEST_DATA = {
+   ใช้ร่วมกับ PHP: ให้ PHP พิมพ์ข้อมูลไว้ในแท็ก script แยกอีกอัน ก่อนสคริปต์ตัวนี้
+     window.CONTEST_DATA = {
         category:{name:"ประเภทที่ 1"}, judge:{name:"กรรมการ A"},
         entries:[{id:1,title:"...",owner:"..."}],
         criteria:[{id:1,name:"...",weight:30,description:""}],   // weight รวม 100
         scores:{"1_1":8},             // key = entryId_criterionId
-        csrf:"..." };</script>
+        csrf:"..." };
    และตั้ง API_URL เป็น endpoint ที่รับ POST JSON
      {entry_id, criterion_id, score|null}  ตอบกลับ {ok:true}
    (api.php จากชุดก่อนหน้าใช้ได้เลย)
