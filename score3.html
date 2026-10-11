@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>บันทึกคะแนนประกวดผลงาน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --paper:#F3F5F4; --card:#fff; --ink:#16232B; --muted:#5E6E75; --line:#D6DDDB;
+  --accent:#0B5C73; --soft:#E8F2F0; --ok:#1E7B4F; --amber:#C98A00; --err:#B3261E; --gold:#C99A1B;
+}
+:root[data-theme=dark]{--paper:#10181C;--card:#192329;--ink:#E7EEF0;--muted:#93A4AB;--line:#2B3A41;--accent:#4FB3CC;--soft:#1B2F36}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--paper:#10181C;--card:#192329;--ink:#E7EEF0;--muted:#93A4AB;--line:#2B3A41;--accent:#4FB3CC;--soft:#1B2F36}}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 'IBM Plex Sans Thai',system-ui,sans-serif;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #E3A008;outline-offset:1px}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- top bar ---------- */
+.top{position:sticky;top:0;z-index:30;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;
+  padding:10px 16px;background:var(--ink);color:#fff}
+:root[data-theme=dark] .top{background:#0A1013}
+.top h1{margin:0;font-size:1.05rem;font-weight:600}
+.top .sub{font-size:.82rem;opacity:.75}
+.grow{flex:1}
+.top select{background:#ffffff1f;border:1px solid #ffffff44;border-radius:8px;padding:6px 10px;color:#fff;max-width:100%}
+.top select option{color:#000}
+.pill{font-size:.82rem;padding:3px 10px;border-radius:99px;background:#ffffff22;white-space:nowrap}
+.pill.ok::before{content:"✓ "}
+.pill.saving{background:#E3A00844}
+.pill.err{background:var(--err)}
+.tbtn{background:#ffffff1f;border:1px solid #ffffff44;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer}
+.tbtn[aria-pressed=true]{background:#fff;color:var(--ink)}
+
+.notice{margin:10px 16px 0;padding:8px 12px;border-radius:8px;font-size:.88rem}
+.notice.warn{background:#FFF1E6;color:#8A3F0E}
+.notice.info{background:var(--soft);color:var(--muted)}
+.prog{margin:10px 16px 0;font-size:.88rem;color:var(--muted)}
+.prog b{color:var(--ink)}
+
+/* ---------- table (notebook / desktop) ---------- */
+.wrap{margin:12px 16px 24px;border:1px solid var(--line);border-radius:10px;background:var(--card);overflow:auto;
+  max-height:calc(100vh - 150px)}
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
+th,td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:6px 8px;background:var(--card)}
+thead th{position:sticky;top:0;z-index:5;background:var(--soft);font-weight:600;text-align:center;vertical-align:bottom;padding:8px}
+thead th small{display:block;font-weight:400;color:var(--muted);font-size:.78rem}
+th.crit{min-width:112px;max-width:150px;white-space:normal;line-height:1.3}
+td.crit{text-align:center;padding:4px}
+
+/* sticky columns */
+.c1,.c2,.c3,.c4{position:sticky;z-index:3}
+thead .c1,thead .c2,thead .c3,thead .c4{z-index:8}
+.c1{left:0;width:48px;min-width:48px;text-align:center}
+.c2{left:48px;width:250px;min-width:250px;max-width:250px}
+.c3{left:298px;width:68px;min-width:68px;text-align:center}
+.c4{left:366px;width:100px;min-width:100px;text-align:center;border-right:2px solid var(--line)}
+td.c2 .t{font-weight:500;line-height:1.35}
+td.c2 .o{font-size:.78rem;color:var(--muted)}
+tr.done td.c1,tr.done td.c2,tr.done td.c3,tr.done td.c4{background:var(--soft)}
+
+.rank{display:inline-block;min-width:34px;padding:2px 8px;border-radius:99px;font-weight:700;background:var(--paper);border:1px solid var(--line)}
+.rank.r1{background:var(--gold);border-color:var(--gold);color:#fff}
+.rank.none{color:var(--muted);font-weight:400;border-style:dashed}
+.total{font-weight:700;font-size:1.02rem}
+.total.part{color:var(--muted);font-weight:500}
+
+td.crit input{width:72px;height:40px;text-align:center;font-size:1.1rem;font-weight:600;border:1.5px solid var(--line);
+  border-radius:8px;background:var(--paper);-moz-appearance:textfield;appearance:textfield}
+td.crit input::-webkit-outer-spin-button,td.crit input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+td.crit input:focus{background:var(--card);border-color:var(--accent)}
+td.crit input.saving{border-color:var(--amber)}
+td.crit input.saved{border-color:var(--ok)}
+td.crit input.bad{border-color:var(--err);background:#B3261E18;color:var(--err)}
+td.crit input.fail{border-color:var(--err);border-style:dashed}
+tbody tr:hover td{background:#0B5C7310}
+tr.done:hover td.c1,tr.done:hover td.c2,tr.done:hover td.c3,tr.done:hover td.c4{background:var(--soft)}
+.hint{margin:0 16px 20px;color:var(--muted);font-size:.82rem}
+
+/* ---------- mobile: each work = card ---------- */
+@media (max-width:899px){
+  .wrap{border:0;background:none;overflow:visible;max-height:none;margin:10px 12px 24px}
+  table,tbody,tr,td{display:block;width:100%}
+  thead{display:none}
+  table{min-width:0}
+  tr{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;padding:6px 0;overflow:hidden}
+  tr.done{border-left:5px solid var(--ok)}
+  th,td{border:0}
+  .c1,.c2,.c3,.c4{position:static;width:auto;min-width:0;max-width:none;text-align:left;border:0;background:transparent!important}
+  td{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 14px}
+  td.c1{display:none}
+  td.c2{display:block;padding-bottom:4px}
+  td.c2 .t{font-size:1.05rem}
+  td.c3::before{content:"อันดับ"}
+  td.c4::before{content:"คะแนนหลังถ่วงน้ำหนัก"}
+  td.c3::before,td.c4::before{color:var(--muted);font-size:.88rem}
+  td.crit{text-align:left;padding:6px 14px}
+  td.crit::before{content:attr(data-label);flex:1;line-height:1.3}
+  td.crit::after{content:none}
+  td.crit .w{color:var(--muted);font-size:.78rem;margin-left:6px}
+  td.crit input{width:84px;height:48px;font-size:1.25rem}
+  td.crit{border-top:1px solid var(--line)}
+  td.crit:first-of-type{border-top:0}
+  td.c4{border-bottom:1px solid var(--line);padding-bottom:10px}
+  .hint{display:none}
+}
+@media (min-width:900px){td.crit .w{display:none}}
+@media (prefers-reduced-motion:no-preference){td.crit input{transition:border-color .15s,background .15s}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1 id="catName">บันทึกคะแนนประกวดผลงาน</h1>
+    <div class="sub" id="judgeName"></div>
+  </div>
+  <select id="catSel" aria-label="เลือกประเภทผลงาน" hidden></select>
+  <div class="grow"></div>
+  <button class="tbtn" id="sortBtn" type="button" aria-pressed="false">เรียงตามอันดับ</button>
+  <span id="status" class="pill ok">บันทึกแล้ว</span>
+</header>
+
+<div id="notices"></div>
+<div class="prog" id="prog"></div>
+<div class="wrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+<p class="hint">กรอกคะแนน 1–10 · กด Enter หรือ ↑ ↓ เพื่อย้ายแถว · คะแนนบันทึกอัตโนมัติทุกช่อง · อันดับแสดงเมื่อกรอกครบทุกเกณฑ์ของเรื่องนั้น</p>
+
+<script>
+/* =====================================================================
+   ตั้งค่าการเชื่อมต่อฐานข้อมูล (ถ้าไม่ตั้งค่า จะทำงานโหมดทดลอง เก็บคะแนนในเครื่องนี้)
+   -------------------------------------------------------------------
+   ใช้ร่วมกับ PHP: ให้ PHP พิมพ์ข้อมูลไว้ก่อน <script> นี้
+     <script>window.CONTEST_DATA = {
+        category:{name:"ประเภทที่ 1"}, judge:{name:"กรรมการ A"},
+        entries:[{id:1,title:"...",owner:"..."}],
+        criteria:[{id:1,name:"...",weight:30,description:""}],   // weight รวม 100
+        scores:{"1_1":8},             // key = entryId_criterionId
+        csrf:"..." };</script>
+   และตั้ง API_URL เป็น endpoint ที่รับ POST JSON
+     {entry_id, criterion_id, score|null}  ตอบกลับ {ok:true}
+   (api.php จากชุดก่อนหน้าใช้ได้เลย)
+   ===================================================================== */
+const API_URL = null;   // เช่น 'api.php'
+
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const key = (e, c) => e + '_' + c;
+const fmt = n => Number(n).toFixed(2);
+
+/* ---------- ข้อมูลทดลอง (ใช้เมื่อไม่มี CONTEST_DATA) ---------- */
+function demoCategories() {
+  const defs = [
+    ['ประเภทที่ 1', 8,  ['ความคิดสร้างสรรค์',30,'ประโยชน์ที่ได้รับ',30,'ความเป็นไปได้ในการใช้งาน',25,'การนำเสนอ',15]],
+    ['ประเภทที่ 2', 12, ['ที่มาและความสำคัญ',10,'วิธีการแก้ปัญหา',20,'ผลลัพธ์',25,'ความคุ้มค่า',15,'ความยั่งยืน',10,'การขยายผล',10,'การนำเสนอ',10]],
+    ['ประเภทที่ 3', 5,  ['นวัตกรรม',25,'ผลกระทบ',25,'ความปลอดภัย',20,'ต้นทุน',15,'การนำเสนอ',15]],
+    ['ประเภทที่ 4', 10, ['เป้าหมาย',8,'การวิเคราะห์',12,'การดำเนินการ',12,'ผลลัพธ์เชิงตัวเลข',20,'ผลลัพธ์เชิงคุณภาพ',10,'ความคุ้มค่า',10,'การมีส่วนร่วม',8,'ความต่อเนื่อง',8,'ความคิดริเริ่ม',6,'การนำเสนอ',6]],
+    ['ประเภทที่ 5', 6,  ['ความสร้างสรรค์',20,'การประยุกต์ใช้',20,'ผลลัพธ์',20,'ความง่ายในการทำซ้ำ',10,'ความปลอดภัย',10,'ต้นทุน',10,'การนำเสนอ',10]],
+  ];
+  return defs.map(([name, n, cr], i) => ({
+    id: i + 1, name,
+    entries: Array.from({length: n}, (_, k) => ({id: k + 1, title: `ผลงานตัวอย่างที่ ${k + 1}`, owner: `ทีมตัวอย่าง ${k + 1}`})),
+    criteria: Array.from({length: cr.length / 2}, (_, k) => ({id: k + 1, name: cr[k * 2], weight: cr[k * 2 + 1]})),
+  }));
+}
+
+/* ---------- โหลดข้อมูล ---------- */
+const real = window.CONTEST_DATA || null;
+const demo = real ? null : demoCategories();
+const LS = 'contest-scoring-demo-v1';
+let demoStore = {};
+try { demoStore = JSON.parse(localStorage.getItem(LS) || '{}'); } catch (e) {}
+
+let cat, entries, criteria, scores, csrf = '';
+function loadCategory(c) {
+  cat = c; entries = c.entries; criteria = c.criteria;
+  scores = real ? {...(real.scores || {})} : {...(demoStore[c.id] || {})};
+}
+if (real) {
+  loadCategory({id: 0, name: real.category?.name || '', entries: real.entries, criteria: real.criteria});
+  csrf = real.csrf || '';
+  $('judgeName').textContent = real.judge?.name ? 'กรรมการ: ' + real.judge.name : '';
+} else {
+  const sel = $('catSel'); sel.hidden = false;
+  sel.innerHTML = demo.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  sel.addEventListener('change', () => { loadCategory(demo.find(c => c.id === +sel.value)); build(); });
+  $('judgeName').textContent = 'โหมดทดลอง · เก็บคะแนนในเครื่องนี้เท่านั้น';
+  loadCategory(demo[0]);
+}
+if (!real && !API_URL) $('notices').innerHTML = '<div class="notice info">โหมดทดลอง: ข้อมูลตัวอย่างและคะแนนถูกเก็บในเบราว์เซอร์นี้ ตั้งค่า API_URL และ CONTEST_DATA เพื่อบันทึกลงฐานข้อมูลจริง</div>';
+
+/* ---------- คำนวณ ---------- */
+function rowCalc(eid) {
+  let scored = 0, sum = 0;
+  for (const c of criteria) { const v = scores[key(eid, c.id)]; if (v) { scored++; sum += v * c.weight / 10; } }
+  return {scored, total: Math.round(sum * 100) / 100, complete: scored === criteria.length};
+}
+function ranks() {
+  const t = entries.map(e => ({id: e.id, ...rowCalc(e.id)})).filter(x => x.complete).sort((a, b) => b.total - a.total);
+  const out = {}; let r = 0, prev = null;
+  t.forEach((x, i) => { if (prev === null || x.total !== prev) { r = i + 1; prev = x.total; } out[x.id] = r; });
+  return out;
+}
+
+/* ---------- สร้างตาราง ---------- */
+function build() {
+  $('catName').textContent = cat.name || 'บันทึกคะแนนประกวดผลงาน';
+  document.title = 'ให้คะแนน · ' + (cat.name || '');
+  const wsum = criteria.reduce((a, c) => a + Number(c.weight), 0);
+  const warn = Math.abs(wsum - 100) > 0.01
+    ? `<div class="notice warn">น้ำหนักเกณฑ์รวมเป็น ${wsum}% ไม่ใช่ 100% แจ้งผู้ดูแลระบบก่อนให้คะแนน</div>` : '';
+  const info = (!real && !API_URL) ? '<div class="notice info">โหมดทดลอง: ข้อมูลตัวอย่างและคะแนนถูกเก็บในเบราว์เซอร์นี้ ตั้งค่า API_URL และ CONTEST_DATA เพื่อบันทึกลงฐานข้อมูลจริง</div>' : '';
+  $('notices').innerHTML = warn + info;
+
+  $('tbl').querySelector('thead').innerHTML = `<tr>
+    <th class="c1">ลำดับ</th><th class="c2">ชื่อเรื่อง</th><th class="c3">Rank</th>
+    <th class="c4">คะแนนหลังถ่วงน้ำหนัก<small>เต็ม 100</small></th>
+    ${criteria.map((c, i) => `<th class="crit" title="${esc(c.description || '')}">${i + 1}. ${esc(c.name)}<small>น้ำหนัก ${Number(c.weight)}%</small></th>`).join('')}
+  </tr>`;
+
+  $('tbl').querySelector('tbody').innerHTML = entries.map((e, i) => `<tr data-e="${e.id}" data-i="${i}">
+    <td class="c1 num">${i + 1}</td>
+    <td class="c2"><div class="t">${esc(e.title)}</div>${e.owner ? `<div class="o">${esc(e.owner)}</div>` : ''}</td>
+    <td class="c3"><span class="rank none">–</span></td>
+    <td class="c4 num"><span class="total part">–</span></td>
+    ${criteria.map(c => `<td class="crit" data-label="${esc(c.name)}"><input type="text" inputmode="numeric" maxlength="2" autocomplete="off"
+        data-e="${e.id}" data-c="${c.id}" value="${scores[key(e.id, c.id)] ?? ''}" aria-label="${esc(e.title)} · ${esc(c.name)} (${Number(c.weight)}%)"></td>`).join('')}
+  </tr>`).join('');
+  $('sortBtn').setAttribute('aria-pressed', 'false');
+  refresh();
+}
+
+/* ---------- อัปเดตอันดับ/คะแนนรวมบนหน้า ---------- */
+function refresh() {
+  const rk = ranks();
+  let filled = 0;
+  document.querySelectorAll('#tbl tbody tr').forEach(tr => {
+    const eid = +tr.dataset.e, s = rowCalc(eid);
+    filled += s.scored;
+    tr.classList.toggle('done', s.complete);
+    const r = tr.querySelector('.rank'), t = tr.querySelector('.total');
+    if (s.complete) { r.textContent = rk[eid]; r.className = 'rank' + (rk[eid] === 1 ? ' r1' : ''); }
+    else { r.textContent = '–'; r.className = 'rank none'; }
+    t.textContent = s.scored ? fmt(s.total) : '–';
+    t.className = 'total' + (s.complete ? '' : ' part');
+  });
+  const all = entries.length * criteria.length;
+  $('prog').innerHTML = `กรอกแล้ว <b class="num">${filled}/${all}</b> ช่อง · ครบทุกเกณฑ์ <b class="num">${Object.keys(rk).length}/${entries.length}</b> เรื่อง`;
+}
+
+/* ---------- Autosave ---------- */
+let inflight = 0; const failed = new Map();
+function setStatus() {
+  const el = $('status');
+  if (failed.size) { el.className = 'pill err'; el.textContent = `ยังไม่ได้บันทึก ${failed.size} ช่อง · กำลังลองใหม่`; }
+  else if (inflight) { el.className = 'pill saving'; el.textContent = 'กำลังบันทึก…'; }
+  else { el.className = 'pill ok'; el.textContent = 'บันทึกแล้ว'; }
+}
+async function persist(eid, cid, val) {
+  if (!API_URL) {                       // โหมดทดลอง: localStorage
+    demoStore[cat.id] = {...scores};
+    try { localStorage.setItem(LS, JSON.stringify(demoStore)); } catch (e) {}
+    return;
+  }
+  const r = await fetch(API_URL, {
+    method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF': csrf},
+    body: JSON.stringify({entry_id: eid, criterion_id: cid, score: val})
+  });
+  if (r.status === 401) { location.reload(); return; }
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'save failed');
+}
+function cellEl(eid, cid) { return document.querySelector(`input[data-e="${eid}"][data-c="${cid}"]`); }
+async function save(eid, cid, val) {
+  const k = key(eid, cid), el = cellEl(eid, cid);
+  inflight++; setStatus();
+  if (el) { el.classList.remove('saved', 'fail'); el.classList.add('saving'); }
+  try {
+    await persist(eid, cid, val);
+    failed.delete(k);
+    if (el) { el.classList.remove('saving'); if (scores[k] === val || (val === null && scores[k] == null)) el.classList.add('saved'); }
+  } catch (err) {
+    failed.set(k, {eid, cid, val});
+    if (el) { el.classList.remove('saving'); el.classList.add('fail'); }
+    setTimeout(retry, 3000);
+  } finally { inflight--; setStatus(); }
+}
+function retry() {
+  [...failed.values()].forEach(f => {
+    const cur = scores[key(f.eid, f.cid)] ?? null;
+    if (cur === f.val) save(f.eid, f.cid, f.val); else failed.delete(key(f.eid, f.cid));
+  });
+}
+window.addEventListener('online', retry);
+window.addEventListener('beforeunload', ev => { if (inflight || failed.size) { ev.preventDefault(); ev.returnValue = ''; } });
+
+/* ---------- Events ---------- */
+const timers = new Map();
+$('tbl').addEventListener('input', ev => {
+  const el = ev.target.closest('td.crit input'); if (!el) return;
+  const eid = +el.dataset.e, cid = +el.dataset.c, k = key(eid, cid);
+  const raw = el.value.trim();
+  el.classList.remove('saved', 'fail', 'bad');
+  clearTimeout(timers.get(k));
+  if (raw === '') {
+    delete scores[k]; refresh();
+    timers.set(k, setTimeout(() => save(eid, cid, null), 400)); return;
+  }
+  const n = Number(raw);
+  if (!/^\d{1,2}$/.test(raw) || n < 1 || n > 10) { el.classList.add('bad'); return; }   // ไม่บันทึกค่าที่ไม่ถูกต้อง
+  scores[k] = n; refresh();
+  timers.set(k, setTimeout(() => save(eid, cid, n), 400));
+});
+$('tbl').addEventListener('focusin', ev => { if (ev.target.matches('td.crit input')) ev.target.select(); });
+$('tbl').addEventListener('blur', ev => {                       // ออกจากช่องแล้วค่าไม่ถูกต้อง → คืนค่าที่บันทึกไว้
+  const el = ev.target; if (!el.matches || !el.matches('td.crit input') || !el.classList.contains('bad')) return;
+  const v = scores[key(+el.dataset.e, +el.dataset.c)];
+  el.value = v ?? ''; el.classList.remove('bad');
+}, true);
+$('tbl').addEventListener('keydown', ev => {
+  const el = ev.target.closest('td.crit input'); if (!el) return;
+  let d = 0;
+  if (ev.key === 'Enter' || ev.key === 'ArrowDown') d = 1; else if (ev.key === 'ArrowUp') d = -1; else return;
+  ev.preventDefault();
+  const rows = [...document.querySelectorAll('#tbl tbody tr')];
+  const i = rows.indexOf(el.closest('tr')), next = rows[i + d];
+  if (next) next.querySelector(`input[data-c="${el.dataset.c}"]`).focus();
+});
+$('sortBtn').addEventListener('click', () => {                  // เรียงตามอันดับ / กลับลำดับเดิม (เรียงเฉพาะตอนกดปุ่ม)
+  const on = $('sortBtn').getAttribute('aria-pressed') !== 'true';
+  $('sortBtn').setAttribute('aria-pressed', String(on));
+  const tb = $('tbl').querySelector('tbody'), rk = ranks();
+  const rows = [...tb.querySelectorAll('tr')];
+  rows.sort(on
+    ? (a, b) => (rk[a.dataset.e] ?? 1e9) - (rk[b.dataset.e] ?? 1e9) || a.dataset.i - b.dataset.i
+    : (a, b) => a.dataset.i - b.dataset.i);
+  rows.forEach(r => tb.appendChild(r));
+});
+
+build();
+})();
+</script>
+</body>
+</html>
