@@ -2,707 +2,1278 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏆 ระบบบันทึกคะแนนการประกวด (Demo)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ระบบบันทึกคะแนนการประกวดผลงาน</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-    font-family: 'Segoe UI', 'Sarabun', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-light: #dbeafe;
+    --success: #16a34a;
+    --success-light: #dcfce7;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+
+    /* ความสูงจริงของ app header / หัวการ์ดผลงาน (JS วัดแล้วใส่ให้) */
+    --bar-h: 56px;
+    --card-head-h: 64px;
+  }
+
+  /* โทนสีของแต่ละผลงาน — ใช้ตัวแปรชุดเดียว ทุกส่วนอ้างอิงจากตรงนี้ */
+  .tone-1 { --t-dark:#1e3a8a; --t-dark2:#1e40af; --t-light:#eff6ff; --t-border:#bfdbfe; --t-accent:#1d4ed8; --t-hover:#dbeafe; }
+  .tone-2 { --t-dark:#14532d; --t-dark2:#166534; --t-light:#f0fdf4; --t-border:#bbf7d0; --t-accent:#15803d; --t-hover:#dcfce7; }
+  .tone-3 { --t-dark:#854d0e; --t-dark2:#a16207; --t-light:#fefce8; --t-border:#fde68a; --t-accent:#a16207; --t-hover:#fef9c3; }
+  .tone-4 { --t-dark:#9f1239; --t-dark2:#be123c; --t-light:#fff1f2; --t-border:#fecdd3; --t-accent:#be123c; --t-hover:#ffe4e6; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Sarabun', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--gray-100);
+    color: var(--gray-900);
+    line-height: 1.5;
     min-height: 100vh;
-    color: #333;
-    padding: 10px;
-}
-.container { max-width: 1200px; margin: 0 auto; }
-header {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-header h1 { color: #4a5fc1; font-size: 1.6em; }
-header p { color: #666; margin-top: 5px; }
-.judge-info { margin-top: 8px; color: #666; }
-.save-status {
-    display: inline-block;
-    margin-top: 8px;
-    padding: 4px 12px;
-    background: #e8f5e9;
-    color: #2e7d32;
-    border-radius: 20px;
-    font-size: 0.85em;
-}
-.save-status.saving { background: #fff3e0; color: #e65100; }
-.card {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-.card label { display: block; font-weight: bold; margin-bottom: 8px; }
-select {
-    width: 100%;
-    padding: 10px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    font-size: 1em;
-}
-.judge-btn {
-    display: block;
-    padding: 12px 20px;
-    background: #4a5fc1;
-    color: #fff;
-    text-decoration: none;
-    border-radius: 8px;
-    margin: 8px 0;
-    transition: 0.2s;
-    cursor: pointer;
-    border: none;
-    text-align: left;
-    font-size: 1em;
-}
-.judge-btn:hover { background: #3a4ea8; transform: translateX(5px); }
-.toolbar { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
-.btn {
-    padding: 10px 20px;
-    background: #fff;
-    color: #4a5fc1;
-    text-decoration: none;
-    border-radius: 8px;
-    font-weight: bold;
-    border: 2px solid #4a5fc1;
-    cursor: pointer;
-    font-size: 1em;
-}
-.btn-primary { background: #4a5fc1; color: #fff; }
-.work-card {
-    background: #fff;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-.work-header {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: #fff;
-    padding: 15px 20px;
+    max-width: 100vw;
+  }
+
+  /* ================================================================
+     APP HEADER — แถบบนสุด ติดอยู่ตลอด ความสูงคงที่ (ไม่ย่อ/ขยายตามการเลื่อน)
+     แตะที่แถบ = ย่อ/ขยายส่วนค้นหา
+     ================================================================ */
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+    align-items: stretch;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    box-shadow: var(--shadow-lg);
+  }
+  .bar-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
     align-items: center;
-}
-.work-header h3 { flex: 1; min-width: 200px; }
-.author { opacity: 0.9; font-size: 0.9em; }
-.total-score {
-    background: rgba(255,255,255,0.25);
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-weight: bold;
-}
-.criteria-table { width: 100%; border-collapse: collapse; }
-.criteria-table th, .criteria-table td {
-    padding: 12px;
+    gap: 10px;
+    padding: 10px 8px 10px 14px;
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
     text-align: left;
-    border-bottom: 1px solid #eee;
-}
-.criteria-table th { background: #f5f7ff; font-weight: 600; }
-.score-input {
-    width: 80px;
-    padding: 8px;
-    border: 2px solid #ddd;
-    border-radius: 6px;
-    text-align: center;
-    font-size: 1em;
-}
-.score-input:focus { border-color: #4a5fc1; outline: none; }
-.score-input.invalid { border-color: #e53935; background: #ffebee; }
-.weight { color: #666; font-weight: 600; }
-.weighted { color: #4a5fc1; font-weight: bold; }
-.rank-table { width: 100%; background: #fff; border-radius: 12px; overflow: hidden; border-collapse: collapse; }
-.rank-table th { background: #4a5fc1; color: #fff; padding: 12px; }
-.rank-table td { padding: 12px; border-bottom: 1px solid #eee; }
-.rank-1 { background: #fff8e1; font-weight: bold; }
-.rank-2 { background: #f5f5f5; }
-.rank-3 { background: #fbe9e7; }
-.page { display: none; }
-.page.active { display: block; }
-.info-box {
-    background: #e3f2fd;
-    border-left: 4px solid #1976d2;
-    padding: 12px 16px;
-    border-radius: 6px;
-    margin-bottom: 15px;
-    font-size: 0.9em;
-}
-@media (max-width: 768px) {
-    header h1 { font-size: 1.2em; }
-    .criteria-table th:nth-child(4),
-    .criteria-table td:nth-child(4) { display: none; }
-    .score-input { width: 70px; padding: 6px; }
-    .work-header { flex-direction: column; align-items: flex-start; }
-}
+    cursor: pointer;
+    user-select: none;
+  }
+  .bar-main:focus-visible { outline: 3px solid #fde68a; outline-offset: -3px; }
+  .chev {
+    flex: none; width: 20px; height: 20px;
+    fill: none; stroke: white; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+    transition: transform 0.3s ease;
+  }
+  .bar-main[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .bar-titles { min-width: 0; }
+  .bar-title {
+    display: block; font-size: 1rem; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .bar-sub { display: none; font-size: 0.78rem; opacity: 0.85; }
+
+  .bar-side { display: flex; align-items: center; gap: 10px; padding: 0 14px 0 4px; }
+
+  .autosave-indicator {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.75rem; color: white;
+    padding: 4px 10px;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .autosave-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-300); transition: background 0.3s; }
+  .autosave-dot.saving { background: var(--warning); animation: pulse 1s infinite; }
+  .autosave-dot.saved { background: #4ade80; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .btn-toggle-all-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.35);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0; flex: none;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .btn-toggle-all-icon:active { background: rgba(255,255,255,0.35); transform: scale(0.92); }
+  .btn-toggle-all-icon svg {
+    width: 18px; height: 18px; fill: none; stroke: white; stroke-width: 2.2;
+    stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s ease;
+  }
+  .btn-toggle-all-icon.expanded svg { transform: rotate(180deg); }
+
+  /* ================================================================
+     ส่วนค้นหา — อยู่ใน flow ปกติของหน้า
+     • เลื่อนลง  → เลื่อนหายไปเองตามธรรมชาติ (ไม่มี JS ขยับ layout ระหว่างเลื่อน)
+     • เลื่อนสุดบน → เห็นอีกครั้ง
+     • แตะแถบ header → ย่อ/ขยาย (ถ้าเลื่อนหนีไปแล้วจะเลื่อนกลับบนสุดให้)
+     ================================================================ */
+  .search-panel {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.3s ease;
+  }
+  .search-panel.collapsed { grid-template-rows: 0fr; }
+  .search-inner { min-height: 0; overflow: hidden; }
+
+  .controls-bar {
+    background: white;
+    padding: 12px 20px;
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .control-group { display: flex; flex-direction: column; gap: 3px; }
+  .control-group label {
+    font-size: 0.7rem; font-weight: 600; color: var(--gray-500);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .control-group select {
+    padding: 7px 10px; border: 1.5px solid var(--gray-300); border-radius: 8px;
+    font-size: 0.85rem; background: white; color: var(--gray-900);
+    min-width: 160px; cursor: pointer; transition: border-color 0.15s;
+  }
+  .control-group select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+
+  .info-panel { padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 12px; background: var(--gray-100); }
+  .info-card {
+    background: white; border-radius: var(--radius); padding: 12px 16px;
+    box-shadow: var(--shadow); border-left: 4px solid var(--primary);
+    flex: 1; min-width: 140px;
+  }
+  .info-card .label { font-size: 0.7rem; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; }
+  .info-card .value { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); margin-top: 2px; white-space: nowrap; }
+  .info-card .value.small { font-size: 0.9rem; white-space: normal; }
+
+  .main-content { padding: 0 20px 40px; }
+
+  /* ================================================================
+     DESKTOP TABLE
+     ================================================================ */
+  .desktop-view { display: none; }
+  .table-wrapper {
+    background: white; border-radius: var(--radius); box-shadow: var(--shadow);
+    overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    max-height: calc(100vh - 300px); min-height: 300px; position: relative;
+    transition: max-height 0.3s ease;
+  }
+  /* ส่วนค้นหาซ่อนอยู่ → ตารางใช้พื้นที่เต็มจอใต้แถบ header */
+  body.panel-collapsed .table-wrapper { max-height: calc(100vh - var(--bar-h) - 24px); }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.82rem; table-layout: fixed; }
+  thead th {
+    background: var(--gray-900); color: white; padding: 8px 3px;
+    text-align: center; font-weight: 600; font-size: 0.72rem; line-height: 1.25;
+    position: sticky; top: 0; z-index: 5; white-space: normal; overflow-wrap: break-word; vertical-align: bottom;
+    border-bottom: 2px solid var(--primary-dark);
+  }
+  thead th.criteria-header { background: var(--primary-dark); }
+  thead th .weight-badge { display: block; font-size: 0.62rem; font-weight: 400; opacity: 0.85; margin-top: 2px; }
+
+  tbody td {
+    padding: 8px 3px; border-bottom: 1px solid var(--gray-200);
+    text-align: center; vertical-align: middle;
+    background: var(--t-light, white);
+    transition: background 0.15s;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--t-hover, var(--gray-50)); }
+
+  thead th.col-no { background: var(--gray-900); color: white; }
+  tbody td.td-no { font-weight: 600; color: var(--t-accent, var(--gray-500)); border-right: 1px solid var(--gray-200); }
+  thead th.col-title, tbody td.td-title { border-right: 2px solid var(--gray-300); }
+  thead th.col-title { background: var(--gray-900); color: white; text-align: left; }
+  tbody td.td-title {
+    text-align: left; font-weight: 700; font-size: 0.8rem;
+    white-space: normal; overflow-wrap: anywhere; line-height: 1.3;
+    color: var(--t-dark, var(--gray-900));
+    border-left: 4px solid var(--t-dark2, transparent);
+  }
+  tbody td.weighted-score { font-weight: 700; font-size: 0.9rem; color: var(--t-accent, var(--gray-900)); }
+  /* ตารางกว้าง 100% (table-layout: fixed) — คอลัมน์เกณฑ์ไม่กำหนดความกว้าง จึงแบ่งพื้นที่ที่เหลือเท่า ๆ กัน
+     ไม่ว่าจะมีกี่ข้อ (4-12) ก็ไม่ต้องเลื่อนซ้ายขวา */
+  th.col-no { width: 44px; }
+  th.col-title { width: 19%; min-width: 130px; }
+  th.col-rank { width: 56px; }
+  th.col-score { width: 84px; }
+
+  .rank-badge { display: inline-block; min-width: 28px; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; }
+  .rank-1 { background: #fef3c7; color: #92400e; }
+  .rank-2 { background: #e5e7eb; color: #374151; }
+  .rank-3 { background: #fed7aa; color: #9a3412; }
+  .rank-other { background: var(--gray-100); color: var(--gray-500); }
+
+  .score-input {
+    width: 100%; max-width: 62px; min-width: 0; padding: 6px 0; text-align: center;
+    border: 1.5px solid var(--gray-300); border-radius: 6px;
+    font-size: 0.85rem; font-weight: 600; color: var(--gray-900); background: white;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -moz-appearance: textfield;
+  }
+  .score-input::-webkit-outer-spin-button,
+  .score-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .score-input::placeholder { font-size: 0.68rem; font-weight: 400; }
+  .score-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+  .score-input.filled { border-color: var(--success); background: var(--success-light); }
+  .score-input.invalid { border-color: var(--danger); background: #fef2f2; }
+
+  /* ================================================================
+     MOBILE — การ์ดต่อผลงาน
+
+     หัวผลงานเป็น position: sticky อยู่ใน .mobile-card ของตัวเอง
+       → หัวที่ 1 ค้างจนกว่าท้ายการ์ดที่ 1 จะเลื่อนมาดัน
+       → หัวที่ 2 ขึ้นมาแทนและค้างต่อ ... ทำซ้ำไปทุกผลงาน
+     สำคัญ: หัวต้องมี z-index สูงกว่ารายการเกณฑ์ เพื่อให้เกณฑ์ "เลื่อนลอด" ใต้หัว
+     (เวอร์ชันเดิมให้เกณฑ์ z-index สูงกว่าหัว เกณฑ์จึงทับหัวที่ค้างอยู่)
+     ================================================================ */
+  .mobile-view { display: block; }
+
+  .mobile-card {
+    background: transparent;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+    scroll-margin-top: calc(var(--bar-h) + 8px);
+  }
+
+  .mobile-card-header {
+    position: -webkit-sticky;
+    position: sticky;
+    top: var(--bar-h);
+    z-index: 20;
+    color: white;
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    cursor: pointer; user-select: none;
+    background: linear-gradient(135deg, var(--t-dark) 0%, var(--t-dark2) 100%);
+    border: 1px solid var(--t-dark);
+    border-left: 5px solid var(--t-dark2);
+    border-bottom: 0;
+    transition: box-shadow 0.2s ease;
+  }
+  .mobile-card-header:focus-visible { outline: 3px solid #fde68a; outline-offset: -3px; }
+  .mobile-card-header.stuck { box-shadow: 0 4px 12px rgba(0,0,0,0.25); border-radius: 0; }
+  .mobile-card.collapsed .mobile-card-header { border-radius: var(--radius); border-bottom: 1px solid var(--t-dark); }
+
+  .mobile-card-header .no-badge {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.85rem; flex-shrink: 0;
+    background: white; color: var(--t-dark);
+  }
+  .mobile-card-header .title-wrap { flex: 1; min-width: 0; }
+  .mobile-card-header .title { font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: white; }
+  .mobile-card-header .sub { font-size: 0.72rem; opacity: 0.85; margin-top: 1px; }
+  .mobile-card-header .rank-wrap { text-align: center; flex-shrink: 0; }
+  .mobile-card-header .rank-wrap .rank-label { font-size: 0.62rem; opacity: 0.75; text-transform: uppercase; }
+  .mobile-card-header .rank-wrap .rank-value { font-size: 1.1rem; font-weight: 800; }
+  .mobile-card-header .score-summary { background: rgba(255,255,255,0.18); border-radius: 8px; padding: 4px 10px; text-align: center; flex-shrink: 0; }
+  .mobile-card-header .score-summary .s-label { font-size: 0.6rem; opacity: 0.85; text-transform: uppercase; }
+  .mobile-card-header .score-summary .s-value { font-size: 1rem; font-weight: 800; color: white; }
+  .mobile-card-header .toggle-btn {
+    background: rgba(255,255,255,0.18); color: white;
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .mobile-card-header .toggle-btn .arrow { display: inline-block; transition: transform 0.3s ease; font-size: 0.75rem; }
+  .mobile-card.collapsed .mobile-card-header .toggle-btn .arrow { transform: rotate(-90deg); }
+
+  .mobile-criteria-list {
+    padding: 8px 12px 12px;
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.3s ease, padding 0.3s ease, opacity 0.25s ease;
+    overflow: hidden;
+    border-radius: 0 0 var(--radius) var(--radius);
+    background: var(--t-light);
+    border: 1px solid var(--t-border);
+    border-left: 5px solid var(--t-dark2);
+    border-top: 0;
+  }
+  .mobile-card.collapsed .mobile-criteria-list {
+    grid-template-rows: 0fr; padding-top: 0; padding-bottom: 0; opacity: 0; border-width: 0;
+  }
+  .mobile-criteria-list > .criteria-inner { min-height: 0; overflow: hidden; }
+
+  .criteria-row {
+    display: flex; align-items: center; padding: 10px 0; gap: 10px;
+    border-bottom: 1px solid var(--t-border);
+  }
+  .criteria-row:last-child { border-bottom: none; }
+  .criteria-info { flex: 1; min-width: 0; }
+  .criteria-name { font-size: 0.82rem; font-weight: 700; color: var(--gray-900); line-height: 1.3; }
+  .criteria-weight {
+    display: inline-block; font-size: 0.65rem; font-weight: 700;
+    padding: 1px 7px; border-radius: 10px; margin-top: 3px;
+    color: white; background: var(--t-accent);
+  }
+  .criteria-input-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; }
+  .criteria-input-wrap .weighted-preview { font-size: 0.62rem; font-weight: 700; color: var(--t-dark); }
+
+  .mobile-score-input {
+    width: 64px; padding: 10px 6px; text-align: center;
+    border: 2px solid var(--gray-300); border-radius: 8px;
+    font-size: 1rem; font-weight: 700; color: var(--gray-900); background: white;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -moz-appearance: textfield;
+    /* ตอนโฟกัส/คีย์บอร์ดเด้ง ให้เบราว์เซอร์เลื่อนช่องมาอยู่ใต้หัวที่ค้าง ไม่ใช่ลอดอยู่ใต้หัว */
+    scroll-margin-top: calc(var(--bar-h) + var(--card-head-h) + 16px);
+    scroll-margin-bottom: 110px;
+  }
+  .mobile-score-input::-webkit-outer-spin-button,
+  .mobile-score-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .mobile-score-input:focus { outline: none; border-color: var(--t-dark2); box-shadow: 0 0 0 3px var(--t-border); }
+  .mobile-score-input.filled { border-color: var(--success); background: var(--success-light); }
+  .mobile-score-input.invalid { border-color: var(--danger); background: #fef2f2; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--gray-500); }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 0.9rem; }
+
+  .toast-container { position: fixed; bottom: 80px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: var(--gray-900); color: white; padding: 10px 16px;
+    border-radius: 8px; font-size: 0.82rem; box-shadow: var(--shadow-lg);
+    display: flex; align-items: center; gap: 8px;
+    animation: slideIn 0.3s ease; max-width: 300px;
+  }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  .mobile-summary {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; border-top: 1px solid var(--gray-200);
+    padding: 10px 16px; box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
+    z-index: 90;
+  }
+  .mobile-summary .summary-inner { display: flex; justify-content: space-around; align-items: center; }
+  .mobile-summary .summary-item { text-align: center; }
+  .mobile-summary .summary-item .s-label { font-size: 0.65rem; color: var(--gray-500); text-transform: uppercase; font-weight: 600; }
+  .mobile-summary .summary-item .s-value { font-size: 1rem; font-weight: 800; color: var(--primary-dark); }
+
+  @media (min-width: 769px) {
+    .desktop-view { display: block; }
+    .mobile-view { display: none; }
+    .mobile-summary { display: none; }
+    .btn-toggle-all-icon { display: none; }
+    .bar-main { padding: 14px 8px 14px 20px; }
+    .bar-title { font-size: 1.25rem; }
+    .bar-sub { display: block; }
+  }
+  @media (max-width: 768px) {
+    .desktop-view { display: none; }
+    .mobile-view { display: block; }
+    .mobile-summary { display: block; }
+    .main-content { padding: 0 12px 90px; }
+    .controls-bar { padding: 10px 12px; gap: 8px; }
+    .control-group select { min-width: 130px; font-size: 0.8rem; padding: 6px 8px; }
+    .info-panel { padding: 12px; gap: 8px; }
+    .info-card { padding: 10px 12px; min-width: 100px; }
+    .info-card .value { font-size: 0.95rem; }
+    /* เลื่อนเข้าหาช่องที่โฟกัส ให้เผื่อพื้นที่หัวที่ค้าง + แถบสรุปด้านล่าง */
+    html { scroll-padding-top: calc(var(--bar-h) + var(--card-head-h) + 12px); scroll-padding-bottom: 96px; }
+  }
+  @media (max-width: 420px) {
+    #autosaveText { display: none; }
+    .autosave-indicator { padding: 6px 8px; }
+    .bar-side { gap: 8px; padding-right: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .search-panel, .mobile-criteria-list, .chev { transition: none; }
+  }
+  @media print {
+    .app-header { position: static; }
+    .search-panel { display: block; }
+    .score-input, .mobile-score-input { border: none; background: transparent !important; }
+    .table-wrapper { max-height: none; overflow: visible; }
+    .mobile-card-header { position: static; }
+    .btn-toggle-all-icon { display: none !important; }
+  }
 </style>
 </head>
 <body>
-<div class="container">
 
-<!-- ==================== หน้าหลัก ==================== -->
-<div id="pageHome" class="page active">
-    <header>
-        <h1>🏆 ระบบบันทึกคะแนนการประกวดผลงาน</h1>
-        <p>เลือกประเภทและกรรมการเพื่อเริ่มให้คะแนน (Demo Mode - ข้อมูลเก็บในเบราว์เซอร์)</p>
-    </header>
-
-    <div class="info-box">
-        💡 <strong>Demo Mode:</strong> ข้อมูลทั้งหมดเก็บใน localStorage ของเบราว์เซอร์นี้
-        <button onclick="resetAll()" style="float:right;background:#e53935;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;">ล้างข้อมูลทั้งหมด</button>
+<header class="app-header" id="appHeader">
+  <button class="bar-main" id="barMain" type="button" aria-expanded="true" aria-controls="searchPanel"
+          title="แตะเพื่อย่อ/ขยายส่วนค้นหา">
+    <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    <span class="bar-titles">
+      <span class="bar-title">🏆 ระบบบันทึกคะแนนการประกวดผลงาน</span>
+      <span class="bar-sub">Competition Scoring System — Auto Save Enabled</span>
+    </span>
+  </button>
+  <div class="bar-side">
+    <div class="autosave-indicator" role="status" aria-live="polite" id="autosaveBox">
+      <span class="autosave-dot" id="autosaveDot"></span>
+      <span id="autosaveText">พร้อมบันทึก</span>
     </div>
+    <button class="btn-toggle-all-icon" id="btnToggleAll" type="button"
+            title="ย่อ/ขยายโซนให้คะแนนทั้งหมด" aria-label="ย่อ/ขยายทั้งหมด">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <polyline points="7 9 12 4 17 9"></polyline>
+        <polyline points="7 15 12 20 17 15"></polyline>
+      </svg>
+    </button>
+  </div>
+</header>
 
-    <div class="card">
-        <label>📂 ประเภทผลงาน:</label>
-        <select id="categorySelect" onchange="loadJudges()">
-            <option value="">-- เลือกประเภท --</option>
-        </select>
+<section class="search-panel" id="searchPanel">
+  <div class="search-inner">
+    <div class="controls-bar" id="controlsBar">
+      <div class="control-group">
+        <label for="categorySelect">ประเภทผลงาน</label>
+        <select id="categorySelect"></select>
+      </div>
+      <div class="control-group">
+        <label for="judgeSelect">กรรมการ</label>
+        <select id="judgeSelect"></select>
+      </div>
     </div>
+    <div class="info-panel" id="infoPanel"></div>
+  </div>
+</section>
 
-    <div class="card" id="judgeCard" style="display:none">
-        <label>👤 เลือกกรรมการ:</label>
-        <div id="judgeList"></div>
+<div class="main-content">
+  <div class="desktop-view" id="desktopView">
+    <div class="table-wrapper">
+      <table id="scoreTable">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
     </div>
-
-    <div class="card" id="rankingCard" style="display:none">
-        <label>📊 ดูอันดับ:</label>
-        <button class="judge-btn" onclick="showRanking()">ดูอันดับผลงานและกรรมการ →</button>
-    </div>
+  </div>
+  <div class="mobile-view" id="mobileView"></div>
 </div>
 
-<!-- ==================== หน้าบันทึกคะแนน ==================== -->
-<div id="pageScoring" class="page">
-    <header>
-        <h1 id="categoryName">กำลังโหลด...</h1>
-        <div class="judge-info">กรรมการ: <strong id="judgeName"></strong></div>
-        <div class="save-status" id="saveStatus">✓ พร้อมบันทึก</div>
-    </header>
-
-    <div class="toolbar">
-        <button class="btn" onclick="showPage('pageHome')">← กลับหน้าหลัก</button>
-        <button class="btn btn-primary" onclick="showRanking()">ดูอันดับ →</button>
-    </div>
-
-    <div id="scoringArea"></div>
+<div class="mobile-summary" id="mobileSummary">
+  <div class="summary-inner">
+    <div class="summary-item"><div class="s-label">ผลงาน</div><div class="s-value" id="msTotalWorks">0</div></div>
+    <div class="summary-item"><div class="s-label">ให้คะแนนแล้ว</div><div class="s-value" id="msScored">0</div></div>
+    <div class="summary-item"><div class="s-label">ความคืบหน้า</div><div class="s-value" id="msProgress">0%</div></div>
+  </div>
 </div>
 
-<!-- ==================== หน้าอันดับ ==================== -->
-<div id="pageRanking" class="page">
-    <header>
-        <h1>🏆 อันดับการประกวด</h1>
-    </header>
-
-    <div class="toolbar">
-        <button class="btn" onclick="showPage('pageHome')">← กลับหน้าหลัก</button>
-    </div>
-
-    <div class="card">
-        <label>เลือกประเภท:</label>
-        <select id="rankCategorySelect" onchange="renderRanking()"></select>
-    </div>
-
-    <div id="rankingArea"></div>
-</div>
-
-</div>
+<div class="toast-container" id="toastContainer"></div>
 
 <script>
-// ============================================================
-// 🗄️ ฐานข้อมูลจำลอง (localStorage)
-// ============================================================
-const DB_KEY = 'contest_db_v1';
+const CATEGORIES = [
+  { id: 'cat1', name: 'นวัตกรรมสิ่งประดิษฐ์' },
+  { id: 'cat2', name: 'โครงงานวิทยาศาสตร์' },
+  { id: 'cat3', name: 'สื่อการเรียนรู้ดิจิทัล' },
+  { id: 'cat4', name: 'ผลงานวิจัยและพัฒนา' },
+  { id: 'cat5', name: 'ศิลปะและวัฒนธรรมสร้างสรรค์' }
+];
 
-function initDB() {
-    if (localStorage.getItem(DB_KEY)) return;
+const CRITERIA = {
+  cat1: [
+    { id: 'c1', name: 'ความคิดสร้างสรรค์', weight: 10 },
+    { id: 'c2', name: 'ความแปลกใหม่', weight: 20 },
+    { id: 'c3', name: 'การประยุกต์ใช้', weight: 10 },
+    { id: 'c4', name: 'ความสมบูรณ์ของผลงาน', weight: 5 },
+    { id: 'c5', name: 'การนำเสนอ', weight: 10 },
+    { id: 'c6', name: 'ปัญหาการวิจัย', weight: 10 },
+    { id: 'c7', name: 'วิธีดำเนินการ', weight: 5 },
+    { id: 'c8', name: 'ผลการทดลอง', weight: 10 },
+    { id: 'c9', name: 'การสรุปผล', weight: 10 },
+    { id: 'c10', name: 'การนำเสนอ', weight: 10 }
+  ],
+  cat2: [
+    { id: 'c1', name: 'ปัญหาการวิจัย', weight: 15 },
+    { id: 'c2', name: 'วิธีดำเนินการ', weight: 25 },
+    { id: 'c3', name: 'ผลการทดลอง', weight: 25 },
+    { id: 'c4', name: 'การสรุปผล', weight: 20 },
+    { id: 'c5', name: 'การนำเสนอ', weight: 15 }
+  ],
+  cat3: [
+    { id: 'c1', name: 'เนื้อหาสาระ', weight: 20 },
+    { id: 'c2', name: 'การออกแบบ', weight: 20 },
+    { id: 'c3', name: 'ปฏิสัมพันธ์', weight: 20 },
+    { id: 'c4', name: 'ความคิดสร้างสรรค์', weight: 20 },
+    { id: 'c5', name: 'การนำไปใช้', weight: 20 }
+  ],
+  cat4: [
+    { id: 'c1', name: 'ความสำคัญของปัญหา', weight: 15 },
+    { id: 'c2', name: 'การทบทวนวรรณกรรม', weight: 15 },
+    { id: 'c3', name: 'ระเบียบวิธีวิจัย', weight: 20 },
+    { id: 'c4', name: 'ผลการวิเคราะห์', weight: 20 },
+    { id: 'c5', name: 'ข้อเสนอแนะ', weight: 15 },
+    { id: 'c6', name: 'การนำเสนอ', weight: 15 }
+  ],
+  cat5: [
+    { id: 'c1', name: 'คุณค่าทางศิลปะ', weight: 25 },
+    { id: 'c2', name: 'ความคิดสร้างสรรค์', weight: 20 },
+    { id: 'c3', name: 'การสื่อความหมาย', weight: 20 },
+    { id: 'c4', name: 'เทคนิคและวิธีการ', weight: 20 },
+    { id: 'c5', name: 'การอนุรักษ์วัฒนธรรม', weight: 15 }
+  ]
+};
 
-    const db = {
-        categories: [
-            { id: 1, name: 'ประเภทที่ 1: นวัตกรรมด้านการศึกษา' },
-            { id: 2, name: 'ประเภทที่ 2: นวัตกรรมด้านเทคโนโลยี' },
-            { id: 3, name: 'ประเภทที่ 3: นวัตกรรมด้านสังคม' },
-            { id: 4, name: 'ประเภทที่ 4: นวัตกรรมด้านสิ่งแวดล้อม' },
-            { id: 5, name: 'ประเภทที่ 5: นวัตกรรมด้านเศรษฐกิจ' }
-        ],
-        works: [
-            // ประเภท 1 (8 เรื่อง)
-            { id: 1, category_id: 1, title: 'ระบบสอนออนไลน์อัจฉริยะ', author: 'ทีม A' },
-            { id: 2, category_id: 1, title: 'แอปเรียนรู้ภาษาไทย', author: 'ทีม B' },
-            { id: 3, category_id: 1, title: 'แพลตฟอร์มสอบออนไลน์', author: 'ทีม C' },
-            { id: 4, category_id: 1, title: 'หุ่นยนต์ช่วยสอน', author: 'ทีม D' },
-            { id: 5, category_id: 1, title: 'สื่อ VR สำหรับเด็ก', author: 'ทีม E' },
-            { id: 6, category_id: 1, title: 'ระบบติวเตอร์ AI', author: 'ทีม F' },
-            { id: 7, category_id: 1, title: 'เกมการศึกษา', author: 'ทีม G' },
-            { id: 8, category_id: 1, title: 'ห้องเรียนเสมือนจริง', author: 'ทีม H' },
-            // ประเภท 2 (6 เรื่อง)
-            { id: 9, category_id: 2, title: 'AI ตรวจโรคพืช', author: 'ทีม I' },
-            { id: 10, category_id: 2, title: 'ระบบ IoT ฟาร์มอัจฉริยะ', author: 'ทีม J' },
-            { id: 11, category_id: 2, title: 'Blockchain สำหรับเอกสาร', author: 'ทีม K' },
-            { id: 12, category_id: 2, title: 'แอปแปลภาษามือ', author: 'ทีม L' },
-            { id: 13, category_id: 2, title: 'ระบบจราจรอัจฉริยะ', author: 'ทีม M' },
-            { id: 14, category_id: 2, title: 'Robot ส่งของ', author: 'ทีม N' },
-            // ประเภท 3 (7 เรื่อง)
-            { id: 15, category_id: 3, title: 'แอปแจ้งเหตุฉุกเฉิน', author: 'ทีม O' },
-            { id: 16, category_id: 3, title: 'ระบบอาสาสมัครออนไลน์', author: 'ทีม P' },
-            { id: 17, category_id: 3, title: 'แพลตฟอร์มผู้สูงอายุ', author: 'ทีม Q' },
-            { id: 18, category_id: 3, title: 'ชุมชนแบ่งปัน', author: 'ทีม R' },
-            { id: 19, category_id: 3, title: 'ระบบบริจาคโปร่งใส', author: 'ทีม S' },
-            { id: 20, category_id: 3, title: 'แอปสุขภาพจิต', author: 'ทีม T' },
-            { id: 21, category_id: 3, title: 'เครือข่ายผู้พิการ', author: 'ทีม U' },
-            // ประเภท 4 (5 เรื่อง)
-            { id: 22, category_id: 4, title: 'ระบบจัดการขยะอัจฉริยะ', author: 'ทีม V' },
-            { id: 23, category_id: 4, title: 'พลังงานแสงอาทิตย์ชุมชน', author: 'ทีม W' },
-            { id: 24, category_id: 4, title: 'แอปติดตามคาร์บอน', author: 'ทีม X' },
-            { id: 25, category_id: 4, title: 'ระบบรดน้ำอัตโนมัติ', author: 'ทีม Y' },
-            { id: 26, category_id: 4, title: 'รีไซเคิลออนไลน์', author: 'ทีม Z' },
-            // ประเภท 5 (6 เรื่อง)
-            { id: 27, category_id: 5, title: 'แพลตฟอร์ม OTOP ออนไลน์', author: 'ทีม AA' },
-            { id: 28, category_id: 5, title: 'ระบบบัญชี SME', author: 'ทีม BB' },
-            { id: 29, category_id: 5, title: 'ตลาดเกษตรกรดิจิทัล', author: 'ทีม CC' },
-            { id: 30, category_id: 5, title: 'แอปท่องเที่ยวชุมชน', author: 'ทีม DD' },
-            { id: 31, category_id: 5, title: 'ระบบโลจิสติกส์ร่วม', author: 'ทีม EE' },
-            { id: 32, category_id: 5, title: 'แพลตฟอร์มระดมทุน', author: 'ทีม FF' }
-        ],
-        judges: [
-            { id: 1, name: 'ดร.สมชาย วิชาการ' },
-            { id: 2, name: 'อ.มาลี สร้างสรรค์' },
-            { id: 3, name: 'ผศ.วิชัย นวัตกรรม' },
-            { id: 4, name: 'รศ.พรทิพย์ พัฒนา' },
-            { id: 5, name: 'ดร.ธนากร วิจัย' },
-            { id: 6, name: 'อ.สุภาพร เทคโนโลยี' }
-        ],
-        judge_categories: [
-            // ประเภท 1: 5 คน
-            { judge_id: 1, category_id: 1 }, { judge_id: 2, category_id: 1 },
-            { judge_id: 3, category_id: 1 }, { judge_id: 4, category_id: 1 },
-            { judge_id: 5, category_id: 1 },
-            // ประเภท 2: 6 คน
-            { judge_id: 1, category_id: 2 }, { judge_id: 2, category_id: 2 },
-            { judge_id: 3, category_id: 2 }, { judge_id: 4, category_id: 2 },
-            { judge_id: 5, category_id: 2 }, { judge_id: 6, category_id: 2 },
-            // ประเภท 3: 4 คน
-            { judge_id: 1, category_id: 3 }, { judge_id: 3, category_id: 3 },
-            { judge_id: 4, category_id: 3 }, { judge_id: 6, category_id: 3 },
-            // ประเภท 4: 7 คน (ใช้ทุกคน)
-            { judge_id: 1, category_id: 4 }, { judge_id: 2, category_id: 4 },
-            { judge_id: 3, category_id: 4 }, { judge_id: 4, category_id: 4 },
-            { judge_id: 5, category_id: 4 }, { judge_id: 6, category_id: 4 },
-            // ประเภท 5: 5 คน
-            { judge_id: 2, category_id: 5 }, { judge_id: 3, category_id: 5 },
-            { judge_id: 4, category_id: 5 }, { judge_id: 5, category_id: 5 },
-            { judge_id: 6, category_id: 5 }
-        ],
-        criteria: [
-            // ประเภท 1: 5 ข้อ (รวม 100%)
-            { id: 1, category_id: 1, name: 'ความคิดสร้างสรรค์', weight: 25 },
-            { id: 2, category_id: 1, name: 'ประโยชน์ใช้งานจริง', weight: 25 },
-            { id: 3, category_id: 1, name: 'ความเป็นไปได้', weight: 20 },
-            { id: 4, category_id: 1, name: 'ความสมบูรณ์ของผลงาน', weight: 20 },
-            { id: 5, category_id: 1, name: 'การนำเสนอ', weight: 10 },
-            // ประเภท 2: 6 ข้อ
-            { id: 6, category_id: 2, name: 'นวัตกรรมทางเทคนิค', weight: 25 },
-            { id: 7, category_id: 2, name: 'ความซับซ้อนของระบบ', weight: 20 },
-            { id: 8, category_id: 2, name: 'การประยุกต์ใช้', weight: 20 },
-            { id: 9, category_id: 2, name: 'ประสิทธิภาพ', weight: 15 },
-            { id: 10, category_id: 2, name: 'ความเสถียร', weight: 10 },
-            { id: 11, category_id: 2, name: 'การนำเสนอ', weight: 10 },
-            // ประเภท 3: 4 ข้อ
-            { id: 12, category_id: 3, name: 'ผลกระทบทางสังคม', weight: 35 },
-            { id: 13, category_id: 3, name: 'ความยั่งยืน', weight: 25 },
-            { id: 14, category_id: 3, name: 'การมีส่วนร่วม', weight: 25 },
-            { id: 15, category_id: 3, name: 'ความคิดสร้างสรรค์', weight: 15 },
-            // ประเภท 4: 5 ข้อ
-            { id: 16, category_id: 4, name: 'ผลกระทบต่อสิ่งแวดล้อม', weight: 30 },
-            { id: 17, category_id: 4, name: 'ความเป็นมิตรกับธรรมชาติ', weight: 20 },
-            { id: 18, category_id: 4, name: 'ความยั่งยืน', weight: 20 },
-            { id: 19, category_id: 4, name: 'นวัตกรรม', weight: 20 },
-            { id: 20, category_id: 4, name: 'การขยายผล', weight: 10 },
-            // ประเภท 5: 6 ข้อ
-            { id: 21, category_id: 5, name: 'มูลค่าทางเศรษฐกิจ', weight: 25 },
-            { id: 22, category_id: 5, name: 'ความเป็นไปได้ทางการตลาด', weight: 20 },
-            { id: 23, category_id: 5, name: 'โมเดลธุรกิจ', weight: 20 },
-            { id: 24, category_id: 5, name: 'การขยายขนาด', weight: 15 },
-            { id: 25, category_id: 5, name: 'การสร้างงาน', weight: 10 },
-            { id: 26, category_id: 5, name: 'การนำเสนอ', weight: 10 }
-        ],
-        scores: {} // key: "judgeId_workId_criteriaId" -> score
-    };
+const WORKS = {
+  cat1: [
+    { id: 'w1', title: 'เครื่องคัดแยกขยะอัตโนมัติ' },
+    { id: 'w2', title: 'รถเข็นไฟฟ้าสำหรับผู้สูงอายุ' },
+    { id: 'w3', title: 'ระบบรดน้ำต้นไม้อัตโนมัติ' },
+    { id: 'w4', title: 'นวัตกรรมบรรจุภัณฑ์จากธรรมชาติ' },
+    { id: 'w5', title: 'หุ่นยนต์ช่วยสอนเด็ก' },
+    { id: 'w6', title: 'เครื่องฟอกอากาศขนาดพกพา' },
+    { id: 'w7', title: 'ระบบแจ้งเตือนน้ำท่วม' },
+    { id: 'w8', title: 'การศึกษาสารสกัดจากสมุนไพร' },
+    { id: 'w9', title: 'การย่อยสลายพลาสติกด้วยแบคทีเรีย' },
+    { id: 'w10', title: 'ผลของแสงสีต่อการเจริญเติบโต' },
+    { id: 'w11', title: 'การบำบัดน้ำเสียด้วยพืช' },
+    { id: 'w12', title: 'การศึกษาพฤติกรรมสัตว์' },
+    { id: 'w13', title: 'พลังงานทดแทนจากเศษอาหาร' }
+  ],
+  cat2: [
+    { id: 'w1', title: 'การศึกษาสารสกัดจากสมุนไพร' },
+    { id: 'w2', title: 'การย่อยสลายพลาสติกด้วยแบคทีเรีย' },
+    { id: 'w3', title: 'ผลของแสงสีต่อการเจริญเติบโต' },
+    { id: 'w4', title: 'การบำบัดน้ำเสียด้วยพืช' },
+    { id: 'w5', title: 'การศึกษาพฤติกรรมสัตว์' },
+    { id: 'w6', title: 'พลังงานทดแทนจากเศษอาหาร' }
+  ],
+  cat3: [
+    { id: 'w1', title: 'แอปพลิเคชันเรียนภาษาไทย' },
+    { id: 'w2', title: 'สื่อการเรียนรู้ AR วิทยาศาสตร์' },
+    { id: 'w3', title: 'เกมการศึกษาคณิตศาสตร์' },
+    { id: 'w4', title: 'บทเรียนออนไลน์ประวัติศาสตร์' },
+    { id: 'w5', title: 'ระบบห้องเรียนเสมือน' },
+    { id: 'w6', title: 'แพลตฟอร์มติวสอบอัจฉริยะ' },
+    { id: 'w7', title: 'สื่อดิจิทัลศิลปะ' },
+    { id: 'w8', title: 'แอปฝึกทักษะการอ่าน' }
+  ],
+  cat4: [
+    { id: 'w1', title: 'การพัฒนาหลักสูตรท้องถิ่น' },
+    { id: 'w2', title: 'วิจัยประสิทธิภาพการสอน' },
+    { id: 'w3', title: 'การจัดการเรียนรู้ STEM' },
+    { id: 'w4', title: 'วิจัยพฤติกรรมผู้เรียน' },
+    { id: 'w5', title: 'การพัฒนาสื่อการสอน' }
+  ],
+  cat5: [
+    { id: 'w1', title: 'นาฏศิลป์ร่วมสมัย' },
+    { id: 'w2', title: 'ดนตรีพื้นบ้านประยุกต์' },
+    { id: 'w3', title: 'จิตรกรรมดิจิทัล' },
+    { id: 'w4', title: 'หัตถกรรมสร้างสรรค์' },
+    { id: 'w5', title: 'วรรณกรรมเยาวชน' },
+    { id: 'w6', title: 'ภาพยนตร์สั้นวัฒนธรรม' }
+  ]
+};
 
-    localStorage.setItem(DB_KEY, JSON.stringify(db));
+const JUDGES = {
+  cat1: [
+    { id: 'j1', name: 'ดร.สมชาย ใจดี' },
+    { id: 'j2', name: 'ผศ.ดร.วิไล พรหมมา' },
+    { id: 'j3', name: 'อ.ธนกร ศรีสุข' },
+    { id: 'j4', name: 'คุณมาลี วงศ์ทอง' },
+    { id: 'j5', name: 'ดร.ประเสริฐ กล้าหาญ' }
+  ],
+  cat2: [
+    { id: 'j1', name: 'รศ.ดร.พิมพ์ใจ รักเรียน' },
+    { id: 'j2', name: 'ดร.วิชัย มั่นคง' },
+    { id: 'j3', name: 'อ.สุดา แสงทอง' },
+    { id: 'j4', name: 'คุณอนุชา พัฒนกุล' }
+  ],
+  cat3: [
+    { id: 'j1', name: 'ดร.นพดล ตั้งใจ' },
+    { id: 'j2', name: 'อ.กมลรัตน์ ดีเลิศ' },
+    { id: 'j3', name: 'คุณศิริพร งามตา' },
+    { id: 'j4', name: 'ดร.ภาณุพงศ์ สุขสันต์' },
+    { id: 'j5', name: 'อ.วีรยา ทองคำ' },
+    { id: 'j6', name: 'คุณณัฐพล ใจเก่ง' }
+  ],
+  cat4: [
+    { id: 'j1', name: 'ศ.ดร.ประธาน วิชาการ' },
+    { id: 'j2', name: 'รศ.ดร.สุนีย์ วิจัยดี' },
+    { id: 'j3', name: 'ดร.อภิชาติ พากเพียร' },
+    { id: 'j4', name: 'อ.จารุวรรณ เรียนดี' },
+    { id: 'j5', name: 'ดร.มานะ อดทน' },
+    { id: 'j6', name: 'คุณลัดดา เพียรพยายาม' },
+    { id: 'j7', name: 'อ.สมหมาย ตั้งใจ' }
+  ],
+  cat5: [
+    { id: 'j1', name: 'อ.ศิลป์ ชีวา' },
+    { id: 'j2', name: 'ดร.วัฒนธรรม ดีงาม' },
+    { id: 'j3', name: 'คุณมณีรัตน์ ศิลปะ' },
+    { id: 'j4', name: 'อ.ประณีต งานฝีมือ' }
+  ]
+};
+
+function getToneClass(index) {
+  return 'tone-' + ((index % 4) + 1);
 }
 
-function getDB() {
-    return JSON.parse(localStorage.getItem(DB_KEY));
-}
+let state = {
+  categoryId: CATEGORIES[0].id,
+  judgeId: JUDGES[CATEGORIES[0].id][0].id,
+  scores: {},
+  lastSaved: null,
+  collapsedWorks: {},      // key = "<categoryId>:<workId>"
+  allCollapsed: false,
+  searchCollapsed: false
+};
 
-function saveDB(db) {
-    localStorage.setItem(DB_KEY, JSON.stringify(db));
-}
+const STORAGE_KEY = 'competition_scores_v1';
+const UI_KEY = 'competition_ui_state_v2';
 
-function resetAll() {
-    if (confirm('ล้างข้อมูลคะแนนทั้งหมด?')) {
-        localStorage.removeItem(DB_KEY);
-        initDB();
-        location.reload();
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data.scores) state.scores = data.scores;
+      if (data.lastSaved) state.lastSaved = data.lastSaved;
     }
+    const uiRaw = localStorage.getItem(UI_KEY);
+    if (uiRaw) {
+      const uiData = JSON.parse(uiRaw);
+      if (uiData.collapsedWorks) state.collapsedWorks = uiData.collapsedWorks;
+      if (typeof uiData.allCollapsed === 'boolean') state.allCollapsed = uiData.allCollapsed;
+    }
+  } catch (e) { console.warn('Load error:', e); }
 }
 
-// ============================================================
-// 🎨 UI Controllers
-// ============================================================
-let currentCategoryId = null;
-let currentJudgeId = null;
-let saveQueue = {};
+function saveToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      scores: state.scores,
+      lastSaved: new Date().toISOString()
+    }));
+    state.lastSaved = new Date().toISOString();
+  } catch (e) { console.warn('Save error:', e); }
+}
+
+function saveUIState() {
+  try {
+    localStorage.setItem(UI_KEY, JSON.stringify({
+      collapsedWorks: state.collapsedWorks,
+      allCollapsed: state.allCollapsed
+    }));
+  } catch (e) { console.warn('UI save error:', e); }
+}
+
 let saveTimer = null;
-
-function showPage(pageId) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(pageId).classList.add('active');
-    window.scrollTo(0, 0);
+function triggerAutoSave() {
+  const dot = document.getElementById('autosaveDot');
+  const text = document.getElementById('autosaveText');
+  dot.className = 'autosave-dot saving';
+  text.textContent = 'กำลังบันทึก...';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveToStorage();
+    dot.className = 'autosave-dot saved';
+    text.textContent = 'บันทึกแล้ว';
+    document.getElementById('autosaveBox').title =
+      'บันทึกล่าสุด ' + new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }, 400);
 }
 
-// ---------- หน้าหลัก ----------
-function initHome() {
-    const db = getDB();
-    const sel = document.getElementById('categorySelect');
-    sel.innerHTML = '<option value="">-- เลือกประเภท --</option>';
-    db.categories.forEach(c => {
-        sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-    });
+function getScore(catId, judgeId, workId, critId) {
+  return state.scores?.[catId]?.[judgeId]?.[workId]?.[critId] ?? null;
 }
 
-function loadJudges() {
-    const catId = parseInt(document.getElementById('categorySelect').value);
-    if (!catId) {
-        document.getElementById('judgeCard').style.display = 'none';
-        document.getElementById('rankingCard').style.display = 'none';
-        return;
+function setScore(catId, judgeId, workId, critId, value) {
+  if (!state.scores[catId]) state.scores[catId] = {};
+  if (!state.scores[catId][judgeId]) state.scores[catId][judgeId] = {};
+  if (!state.scores[catId][judgeId][workId]) state.scores[catId][judgeId][workId] = {};
+  state.scores[catId][judgeId][workId][critId] = value;
+  triggerAutoSave();
+}
+
+function calcWeightedScore(catId, judgeId, workId) {
+  const criteria = CRITERIA[catId];
+  if (!criteria) return 0;
+  let total = 0;
+  let hasAny = false;
+  criteria.forEach(c => {
+    const raw = getScore(catId, judgeId, workId, c.id);
+    if (raw !== null && raw !== undefined && raw !== '') {
+      hasAny = true;
+      total += (Number(raw) * c.weight) / 100;
     }
-    currentCategoryId = catId;
-    const db = getDB();
-    const judges = db.judge_categories
-        .filter(jc => jc.category_id === catId)
-        .map(jc => db.judges.find(j => j.id === jc.judge_id));
-
-    const list = document.getElementById('judgeList');
-    list.innerHTML = '';
-    judges.forEach(j => {
-        const btn = document.createElement('button');
-        btn.className = 'judge-btn';
-        btn.textContent = `👤 ${j.name}`;
-        btn.onclick = () => startScoring(catId, j.id);
-        list.appendChild(btn);
-    });
-    document.getElementById('judgeCard').style.display = 'block';
-    document.getElementById('rankingCard').style.display = 'block';
+  });
+  return hasAny ? Math.round(total * 100) / 100 : null;
 }
 
-// ---------- หน้าบันทึกคะแนน ----------
-function startScoring(catId, judgeId) {
-    currentCategoryId = catId;
-    currentJudgeId = judgeId;
-    const db = getDB();
-    const cat = db.categories.find(c => c.id === catId);
-    const judge = db.judges.find(j => j.id === judgeId);
-
-    document.getElementById('categoryName').textContent = cat.name;
-    document.getElementById('judgeName').textContent = judge.name;
-
-    const works = db.works.filter(w => w.category_id === catId);
-    const criteria = db.criteria.filter(c => c.category_id === catId);
-
-    renderScoringTable(works, criteria, db.scores);
-    showPage('pageScoring');
+function calcProgress(catId, judgeId) {
+  const works = WORKS[catId] || [];
+  const criteria = CRITERIA[catId] || [];
+  const totalCells = works.length * criteria.length;
+  if (totalCells === 0) return { scored: 0, total: 0, percent: 0 };
+  let scored = 0;
+  works.forEach(w => {
+    criteria.forEach(c => {
+      const v = getScore(catId, judgeId, w.id, c.id);
+      if (v !== null && v !== undefined && v !== '') scored++;
+    });
+  });
+  return { scored, total: totalCells, percent: Math.round((scored / totalCells) * 100) };
 }
 
-function renderScoringTable(works, criteria, scores) {
-    const area = document.getElementById('scoringArea');
-    let html = '';
-
-    works.forEach(work => {
-        html += `<div class="work-card">
-            <div class="work-header">
-                <h3>${work.title}</h3>
-                <span class="author">โดย ${work.author}</span>
-                <span class="total-score" id="total_${work.id}">คะแนนรวม: 0.00</span>
-            </div>
-            <table class="criteria-table">
-                <thead>
-                    <tr>
-                        <th>เกณฑ์การประเมิน</th>
-                        <th>น้ำหนัก</th>
-                        <th>คะแนน (1-10)</th>
-                        <th>คะแนนถ่วงน้ำหนัก</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-
-        criteria.forEach(c => {
-            const key = `${currentJudgeId}_${work.id}_${c.id}`;
-            const savedScore = scores[key] || '';
-            html += `<tr>
-                <td>${c.name}</td>
-                <td class="weight">${c.weight}%</td>
-                <td>
-                    <input type="number" min="1" max="10" step="0.1"
-                           class="score-input"
-                           data-work="${work.id}"
-                           data-criteria="${c.id}"
-                           data-weight="${c.weight}"
-                           value="${savedScore}"
-                           oninput="onScoreChange(this)">
-                </td>
-                <td class="weighted" id="w_${key}">-</td>
-            </tr>`;
-        });
-
-        html += `</tbody></table></div>`;
-    });
-
-    area.innerHTML = html;
-
-    // คำนวณคะแนนเริ่มต้น
-    document.querySelectorAll('.score-input').forEach(inp => {
-        if (inp.value) updateWeightedScore(inp);
-    });
-}
-
-function onScoreChange(input) {
-    const val = parseFloat(input.value);
-    const workId = input.dataset.work;
-    const criteriaId = input.dataset.criteria;
-
-    if (input.value !== '' && (isNaN(val) || val < 1 || val > 10)) {
-        input.classList.add('invalid');
-        return;
+function calcRankings(catId, judgeId) {
+  const works = WORKS[catId] || [];
+  const scored = works.map(w => ({
+    workId: w.id,
+    title: w.title,
+    score: calcWeightedScore(catId, judgeId, w.id)
+  }));
+  const withScores = scored.filter(s => s.score !== null).sort((a, b) => b.score - a.score);
+  const withoutScores = scored.filter(s => s.score === null);
+  const rankMap = {};
+  let currentRank = 1;
+  withScores.forEach((item, idx) => {
+    if (idx > 0 && withScores[idx - 1].score !== item.score) {
+      currentRank = idx + 1;
     }
-    input.classList.remove('invalid');
+    rankMap[item.workId] = currentRank;
+  });
+  return { ranked: withScores, unranked: withoutScores, rankMap };
+}
 
-    updateWeightedScore(input);
-    if (input.value !== '') {
-        queueSave(workId, criteriaId, val);
+/* ------------------------------------------------------------------ */
+/* Render                                                              */
+/* ------------------------------------------------------------------ */
+function renderCategorySelect() {
+  const sel = document.getElementById('categorySelect');
+  sel.innerHTML = CATEGORIES.map(c =>
+    `<option value="${c.id}" ${c.id === state.categoryId ? 'selected' : ''}>${c.name}</option>`
+  ).join('');
+}
+
+function renderJudgeSelect() {
+  const sel = document.getElementById('judgeSelect');
+  const judges = JUDGES[state.categoryId] || [];
+  if (!judges.find(j => j.id === state.judgeId)) {
+    state.judgeId = judges[0]?.id || '';
+  }
+  sel.innerHTML = judges.map(j =>
+    `<option value="${j.id}" ${j.id === state.judgeId ? 'selected' : ''}>${j.name}</option>`
+  ).join('');
+}
+
+function renderInfoPanel() {
+  const cat = CATEGORIES.find(c => c.id === state.categoryId);
+  const judges = JUDGES[state.categoryId] || [];
+  const works = WORKS[state.categoryId] || [];
+  const criteria = CRITERIA[state.categoryId] || [];
+  const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
+
+  document.getElementById('infoPanel').innerHTML = `
+    <div class="info-card">
+      <div class="label">ประเภท</div>
+      <div class="value small">${cat?.name || '-'}</div>
+    </div>
+    <div class="info-card">
+      <div class="label">ผลงาน</div>
+      <div class="value">${works.length} เรื่อง</div>
+    </div>
+    <div class="info-card">
+      <div class="label">กรรมการ</div>
+      <div class="value">${judges.length} ท่าน</div>
+    </div>
+    <div class="info-card">
+      <div class="label">เกณฑ์</div>
+      <div class="value">${criteria.length} ข้อ <span style="font-size:0.7rem;color:${totalWeight===100?'var(--success)':'var(--danger)'}">(${totalWeight}%)</span></div>
+    </div>
+    <div class="info-card" style="border-left-color:var(--success)">
+      <div class="label">ความคืบหน้า</div>
+      <div class="value" id="progressValue"></div>
+    </div>
+  `;
+  updateProgressCard();
+}
+
+/* อัปเดตเฉพาะข้อความความคืบหน้า — ไม่สร้างการ์ดใหม่ จะได้ไม่ทำให้ layout ขยับตอนกรอกคะแนน */
+function updateProgressCard() {
+  const el = document.getElementById('progressValue');
+  if (!el) return;
+  const p = calcProgress(state.categoryId, state.judgeId);
+  el.textContent = `${p.scored}/${p.total} (${p.percent}%)`;
+}
+
+function renderDesktopTable() {
+  const works = WORKS[state.categoryId] || [];
+  const criteria = CRITERIA[state.categoryId] || [];
+  const { rankMap } = calcRankings(state.categoryId, state.judgeId);
+
+  document.getElementById('tableHead').innerHTML = `
+    <tr>
+      <th class="col-no">ลำดับ</th>
+      <th class="col-title">ชื่อเรื่อง</th>
+      <th class="col-rank">Rank</th>
+      <th class="col-score">คะแนนถ่วงน้ำหนัก</th>
+      ${criteria.map(c => `
+        <th class="criteria-header">
+          ${c.name}
+          <span class="weight-badge">${c.weight}%</span>
+        </th>
+      `).join('')}
+    </tr>
+  `;
+
+  const tbody = document.getElementById('tableBody');
+  if (works.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${4 + criteria.length}" class="empty-state">ไม่มีข้อมูลผลงาน</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = works.map((w, idx) => {
+    const weighted = calcWeightedScore(state.categoryId, state.judgeId, w.id);
+    const rank = rankMap[w.id];
+    const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other';
+    const toneClass = getToneClass(idx);
+
+    const criteriaCells = criteria.map(c => {
+      const val = getScore(state.categoryId, state.judgeId, w.id, c.id);
+      const filled = (val !== null && val !== undefined && val !== '') ? 'filled' : '';
+      return `
+        <td>
+          <input type="number" class="score-input ${filled}"
+                 min="1" max="10" step="0.5"
+                 data-work="${w.id}" data-crit="${c.id}"
+                 value="${val ?? ''}"
+                 placeholder="1-10"
+                 inputmode="decimal"
+                 aria-label="${w.title} — ${c.name}">
+        </td>
+      `;
+    }).join('');
+
+    return `
+      <tr class="${toneClass}">
+        <td class="td-no">${idx + 1}</td>
+        <td class="td-title" title="${w.title}">${w.title}</td>
+        <td>${rank ? `<span class="rank-badge ${rankClass}">${rank}</span>` : '<span style="color:var(--gray-300)">-</span>'}</td>
+        <td class="weighted-score">${weighted !== null ? weighted.toFixed(2) : '-'}</td>
+        ${criteriaCells}
+      </tr>
+    `;
+  }).join('');
+
+  tbody.querySelectorAll('.score-input').forEach(input => {
+    input.addEventListener('input', handleScoreInput);
+    input.addEventListener('blur', handleScoreBlur);
+  });
+}
+
+function renderMobileCards() {
+  const works = WORKS[state.categoryId] || [];
+  const criteria = CRITERIA[state.categoryId] || [];
+  const { rankMap } = calcRankings(state.categoryId, state.judgeId);
+  const container = document.getElementById('mobileView');
+
+  if (works.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>ไม่มีข้อมูลผลงาน</p></div>`;
+    return;
+  }
+
+  container.innerHTML = works.map((w, idx) => {
+    const weighted = calcWeightedScore(state.categoryId, state.judgeId, w.id);
+    const rank = rankMap[w.id];
+    const collapsed = isCollapsed(w.id);
+    const toneClass = getToneClass(idx);
+
+    const criteriaRows = criteria.map(c => {
+      const val = getScore(state.categoryId, state.judgeId, w.id, c.id);
+      const filled = (val !== null && val !== undefined && val !== '') ? 'filled' : '';
+      const weightedPreview = (val !== null && val !== undefined && val !== '')
+        ? ((Number(val) * c.weight) / 100).toFixed(2)
+        : '0.00';
+      return `
+        <div class="criteria-row">
+          <div class="criteria-info">
+            <div class="criteria-name">${c.name}</div>
+            <span class="criteria-weight">น้ำหนัก ${c.weight}%</span>
+          </div>
+          <div class="criteria-input-wrap">
+            <input type="number" class="mobile-score-input ${filled}"
+                   min="1" max="10" step="0.5"
+                   data-work="${w.id}" data-crit="${c.id}"
+                   value="${val ?? ''}"
+                   placeholder="1-10"
+                   inputmode="decimal"
+                   aria-label="${w.title} — ${c.name}">
+            <span class="weighted-preview">${weightedPreview} คะแนน</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="mobile-card ${toneClass} ${collapsed ? 'collapsed' : ''}" data-work-id="${w.id}">
+        <div class="mobile-card-header" role="button" tabindex="0" aria-expanded="${!collapsed}" data-toggle-card="${w.id}">
+          <div class="no-badge">${idx + 1}</div>
+          <div class="title-wrap">
+            <div class="title" title="${w.title}">${w.title}</div>
+            <div class="sub">${criteria.length} เกณฑ์การประเมิน</div>
+          </div>
+          <div class="rank-wrap">
+            <div class="rank-label">Rank</div>
+            <div class="rank-value">${rank || '-'}</div>
+          </div>
+          <div class="score-summary">
+            <div class="s-label">ถ่วงน้ำหนัก</div>
+            <div class="s-value">${weighted !== null ? weighted.toFixed(2) : '-'}</div>
+          </div>
+          <span class="toggle-btn" aria-hidden="true"><span class="arrow">▼</span></span>
+        </div>
+        <div class="mobile-criteria-list">
+          <div class="criteria-inner">
+            ${criteriaRows}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.mobile-score-input').forEach(input => {
+    input.addEventListener('input', handleScoreInput);
+    input.addEventListener('blur', handleScoreBlur);
+  });
+
+  container.querySelectorAll('.mobile-card-header').forEach(header => {
+    header.addEventListener('click', () => toggleCard(header.dataset.toggleCard));
+    header.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCard(header.dataset.toggleCard); }
+    });
+  });
+}
+
+function renderMobileSummary() {
+  const works = WORKS[state.categoryId] || [];
+  const progress = calcProgress(state.categoryId, state.judgeId);
+  const scoredWorks = works.filter(w => calcWeightedScore(state.categoryId, state.judgeId, w.id) !== null).length;
+  document.getElementById('msTotalWorks').textContent = works.length;
+  document.getElementById('msScored').textContent = scoredWorks;
+  document.getElementById('msProgress').textContent = progress.percent + '%';
+}
+
+/* ------------------------------------------------------------------ */
+/* ย่อ/ขยายการ์ดผลงาน                                                   */
+/* ------------------------------------------------------------------ */
+const ckey = workId => state.categoryId + ':' + workId;
+const isCollapsed = workId => state.allCollapsed || state.collapsedWorks[ckey(workId)] === true;
+
+function applyCollapseState() {
+  document.querySelectorAll('.mobile-card').forEach(card => {
+    const c = isCollapsed(card.dataset.workId);
+    card.classList.toggle('collapsed', c);
+    card.querySelector('.mobile-card-header').setAttribute('aria-expanded', String(!c));
+  });
+}
+
+function toggleCard(workId) {
+  const card = document.querySelector(`.mobile-card[data-work-id="${workId}"]`);
+  const wasStuck = card && card.querySelector('.mobile-card-header').classList.contains('stuck');
+
+  if (state.allCollapsed) {
+    // ย่อทั้งหมดอยู่ → แตะการ์ดไหน = ขยายเฉพาะการ์ดนั้น ที่เหลือคงย่อไว้
+    state.allCollapsed = false;
+    state.collapsedWorks = {};
+    (WORKS[state.categoryId] || []).forEach(w => {
+      if (w.id !== workId) state.collapsedWorks[ckey(w.id)] = true;
+    });
+  } else if (state.collapsedWorks[ckey(workId)]) {
+    delete state.collapsedWorks[ckey(workId)];
+  } else {
+    state.collapsedWorks[ckey(workId)] = true;
+  }
+
+  applyCollapseState();
+  updateToggleAllButton();
+  saveUIState();
+
+  // ย่อการ์ดที่หัวกำลังค้างอยู่ → เลื่อนมาที่การ์ดนั้น กันหลงตำแหน่งหลังความสูงหด
+  if (wasStuck && isCollapsed(workId) && card) {
+    setTimeout(() => card.scrollIntoView({ block: 'start', behavior: 'smooth' }), 320);
+  }
+}
+
+function toggleAllCards() {
+  state.allCollapsed = !state.allCollapsed;
+  if (state.allCollapsed) state.collapsedWorks = {};
+  applyCollapseState();
+  updateToggleAllButton();
+  saveUIState();
+  showToast(state.allCollapsed ? 'ย่อทั้งหมดแล้ว' : 'ขยายทั้งหมดแล้ว', 'success');
+}
+
+function updateToggleAllButton() {
+  const btn = document.getElementById('btnToggleAll');
+  if (!btn) return;
+  btn.classList.toggle('expanded', state.allCollapsed);
+  btn.setAttribute('title', state.allCollapsed ? 'ขยายทั้งหมด' : 'ย่อทั้งหมด');
+}
+
+/* ------------------------------------------------------------------ */
+/* ส่วนค้นหา + หัวที่ค้าง                                               */
+/* ------------------------------------------------------------------ */
+const appHeader = document.getElementById('appHeader');
+const searchPanel = document.getElementById('searchPanel');
+const barMain = document.getElementById('barMain');
+
+function setSearchCollapsed(collapsed) {
+  state.searchCollapsed = collapsed;
+  searchPanel.classList.toggle('collapsed', collapsed);
+  searchPanel.inert = collapsed;                       // กัน Tab/โฟกัสเข้าไปในส่วนที่ซ่อน
+  document.body.classList.toggle('panel-collapsed', collapsed);
+  barMain.setAttribute('aria-expanded', String(!collapsed));
+}
+
+/* แตะแถบ header:
+   - ส่วนค้นหาซ่อนอยู่ หรือถูกเลื่อนหนีพ้นจอไปแล้ว → เปิดแล้วเลื่อนกลับบนสุด
+   - ส่วนค้นหาอยู่ในจอ → ย่อ */
+function onBarToggle() {
+  const barH = appHeader.offsetHeight;
+  const gone = state.searchCollapsed || searchPanel.getBoundingClientRect().bottom <= barH + 2;
+  autoCollapsed = false;                                // ผู้ใช้สั่งเอง → ไม่ใช่การซ่อนอัตโนมัติอีกต่อไป
+  if (gone) {
+    setSearchCollapsed(false);
+    if (tableWrap.scrollTop > 0) deskKeepOpen = true;   // เปิดเองระหว่างที่ตารางเลื่อนอยู่ → อย่าซ่อนซ้ำจนกว่าจะเลื่อนกลับบนสุด
+    deskLockUntil = performance.now() + 400;
+    if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    setSearchCollapsed(true);
+  }
+}
+
+/* ใส่ความสูงจริงของแถบ header / หัวการ์ด ลง CSS variable — หัวการ์ดที่ค้างจะอยู่ใต้แถบพอดี */
+function updateOffsets() {
+  const root = document.documentElement.style;
+  root.setProperty('--bar-h', appHeader.offsetHeight + 'px');
+  const ch = document.querySelector('.mobile-card-header');
+  if (ch && ch.offsetHeight) root.setProperty('--card-head-h', ch.offsetHeight + 'px');
+}
+
+function updateStuckClass() {
+  if (window.innerWidth > 768) return;
+  const barH = appHeader.offsetHeight;
+  document.querySelectorAll('.mobile-card-header').forEach(h => {
+    h.classList.toggle('stuck', h.getBoundingClientRect().top <= barH + 1);
+  });
+}
+
+let scrollTicking = false;
+function onScroll() {
+  if (scrollTicking) return;
+  scrollTicking = true;
+  requestAnimationFrame(() => { updateStuckClass(); scrollTicking = false; });
+}
+
+function setupStickyHeaders() {
+  updateOffsets();
+  requestAnimationFrame(() => { updateOffsets(); updateStuckClass(); });
+}
+
+window.addEventListener('scroll', onScroll, { passive: true });
+window.addEventListener('resize', setupStickyHeaders);
+window.addEventListener('orientationchange', () => setTimeout(setupStickyHeaders, 200));
+searchPanel.addEventListener('transitionend', updateStuckClass);
+if ('ResizeObserver' in window) {
+  new ResizeObserver(() => { updateOffsets(); updateStuckClass(); }).observe(appHeader);
+}
+
+/* ---------- Desktop: เลื่อนในตาราง → ซ่อนส่วนค้นหา, เลื่อนกลับบนสุด → แสดง ----------
+   ตารางมีแถบเลื่อนของตัวเอง จึงต้องฟัง scroll ของตารางโดยตรง (หน้าเว็บไม่ได้เลื่อน)
+   ซ่อนเฉพาะเมื่อซ่อนแล้วตารางยังมีส่วนให้เลื่อนเหลืออยู่ (กัน scrollTop ถูกบีบเป็น 0 แล้วสลับไปมา)
+   และมี lock 0.4 วินาทีช่วงที่ตารางกำลังขยาย/หดตามแอนิเมชัน */
+const tableWrap = document.querySelector('.table-wrapper');
+let autoCollapsed = false, deskKeepOpen = false, deskLockUntil = 0, deskTicking = false;
+
+function onTableScroll() {
+  if (deskTicking) return;
+  deskTicking = true;
+  requestAnimationFrame(() => {
+    deskTicking = false;
+    if (window.innerWidth <= 768 || performance.now() < deskLockUntil) return;
+    const top = tableWrap.scrollTop;
+    if (top <= 0) {
+      deskKeepOpen = false;
+      if (autoCollapsed) {
+        autoCollapsed = false;
+        deskLockUntil = performance.now() + 400;
+        setSearchCollapsed(false);
+      }
+      return;
     }
-}
-
-function updateWeightedScore(input) {
-    const workId = input.dataset.work;
-    const criteriaId = input.dataset.criteria;
-    const weight = parseFloat(input.dataset.weight);
-    const val = parseFloat(input.value) || 0;
-    const weighted = (val * weight / 100).toFixed(2);
-    const key = `${currentJudgeId}_${workId}_${criteriaId}`;
-
-    document.getElementById(`w_${key}`).textContent = input.value ? weighted : '-';
-    recalcTotal(workId);
-}
-
-function recalcTotal(workId) {
-    let total = 0;
-    document.querySelectorAll(`input[data-work="${workId}"]`).forEach(inp => {
-        const v = parseFloat(inp.value) || 0;
-        const w = parseFloat(inp.dataset.weight);
-        total += v * w / 100;
-    });
-    document.getElementById(`total_${workId}`).textContent = `คะแนนรวม: ${total.toFixed(2)}`;
-}
-
-// ---------- Auto-Save ----------
-function queueSave(workId, criteriaId, score) {
-    const key = `${currentJudgeId}_${workId}_${criteriaId}`;
-    saveQueue[key] = { judgeId: currentJudgeId, workId, criteriaId, score };
-    setStatus('⏳ กำลังบันทึก...', 'saving');
-
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(flushSave, 300);
-}
-
-function flushSave() {
-    const items = Object.values(saveQueue);
-    saveQueue = {};
-    if (items.length === 0) return;
-
-    const db = getDB();
-    items.forEach(item => {
-        const key = `${item.judgeId}_${item.workId}_${item.criteriaId}`;
-        db.scores[key] = item.score;
-    });
-    saveDB(db);
-
-    const now = new Date().toLocaleTimeString('th-TH');
-    setStatus(`✓ บันทึกแล้ว (${now})`, '');
-}
-
-function setStatus(msg, cls) {
-    const el = document.getElementById('saveStatus');
-    el.textContent = msg;
-    el.className = 'save-status ' + cls;
-}
-
-// ---------- หน้า Ranking ----------
-function showRanking() {
-    const sel = document.getElementById('rankCategorySelect');
-    const db = getDB();
-    sel.innerHTML = '';
-    db.categories.forEach(c => {
-        sel.innerHTML += `<option value="${c.id}" ${c.id === currentCategoryId ? 'selected' : ''}>${c.name}</option>`;
-    });
-    renderRanking();
-    showPage('pageRanking');
-}
-
-function renderRanking() {
-    const catId = parseInt(document.getElementById('rankCategorySelect').value);
-    const db = getDB();
-    const works = db.works.filter(w => w.category_id === catId);
-    const criteria = db.criteria.filter(c => c.category_id === catId);
-    const judgesInCat = db.judge_categories
-        .filter(jc => jc.category_id === catId)
-        .map(jc => db.judges.find(j => j.id === jc.judge_id));
-
-    // คำนวณคะแนนผลงาน
-    const workScores = works.map(w => {
-        let total = 0;
-        let judgeCount = 0;
-        const judgeScores = {};
-
-        judgesInCat.forEach(j => {
-            let jTotal = 0;
-            let hasAny = false;
-            criteria.forEach(c => {
-                const key = `${j.id}_${w.id}_${c.id}`;
-                const s = db.scores[key];
-                if (s !== undefined) {
-                    jTotal += s * c.weight / 100;
-                    hasAny = true;
-                }
-            });
-            if (hasAny) {
-                judgeScores[j.id] = jTotal;
-                total += jTotal;
-                judgeCount++;
-            }
-        });
-
-        return {
-            work: w,
-            total: total,
-            avg: judgeCount > 0 ? total / judgeCount : 0,
-            judgeCount: judgeCount,
-            judgeScores: judgeScores
-        };
-    });
-
-    workScores.sort((a, b) => b.total - a.total);
-
-    // คำนวณคะแนนกรรมการ (ค่าเฉลี่ยถ่วงน้ำหนักที่ให้กับทุกผลงานในประเภท)
-    const judgeStats = judgesInCat.map(j => {
-        let sumWeighted = 0;
-        let count = 0;
-        works.forEach(w => {
-            let wTotal = 0;
-            let hasAny = false;
-            criteria.forEach(c => {
-                const key = `${j.id}_${w.id}_${c.id}`;
-                const s = db.scores[key];
-                if (s !== undefined) {
-                    wTotal += s * c.weight / 100;
-                    hasAny = true;
-                }
-            });
-            if (hasAny) {
-                sumWeighted += wTotal;
-                count++;
-            }
-        });
-        return {
-            judge: j,
-            avg: count > 0 ? sumWeighted / count : 0,
-            scoredWorks: count
-        };
-    });
-    judgeStats.sort((a, b) => b.avg - a.avg);
-
-    // Render
-    let html = '<div class="card"><h2>📊 อันดับผลงาน</h2><br>';
-    html += '<table class="rank-table"><thead><tr><th>อันดับ</th><th>ผลงาน</th><th>ผู้แต่ง</th><th>กรรมการให้คะแนน</th><th>คะแนนรวม</th><th>คะแนนเฉลี่ย</th></tr></thead><tbody>';
-    workScores.forEach((w, i) => {
-        const cls = i < 3 ? `rank-${i+1}` : '';
-        const medal = ['🥇','🥈','🥉'][i] || (i+1);
-        html += `<tr class="${cls}">
-            <td>${medal}</td>
-            <td>${w.work.title}</td>
-            <td>${w.work.author}</td>
-            <td>${w.judgeCount} / ${judgesInCat.length}</td>
-            <td><strong>${w.total.toFixed(2)}</strong></td>
-            <td>${w.avg.toFixed(2)}</td>
-        </tr>`;
-    });
-    html += '</tbody></table></div>';
-
-    // ตารางแยกตามกรรมการแต่ละท่าน
-    html += '<div class="card"><h2>👥 Ranking การให้คะแนนของกรรมการแต่ละท่าน</h2>';
-    html += '<p style="color:#666;margin:8px 0;">แสดงอันดับผลงานที่กรรมการแต่ละท่านให้คะแนนสูงสุด</p>';
-
-    judgesInCat.forEach(j => {
-        const jWorks = works.map(w => {
-            let total = 0;
-            let filled = 0;
-            criteria.forEach(c => {
-                const key = `${j.id}_${w.id}_${c.id}`;
-                const s = db.scores[key];
-                if (s !== undefined) {
-                    total += s * c.weight / 100;
-                    filled++;
-                }
-            });
-            return { work: w, total, filled };
-        }).filter(x => x.filled > 0).sort((a, b) => b.total - a.total);
-
-        html += `<div style="margin-top:15px;padding:12px;background:#f5f7ff;border-radius:8px;">
-            <strong>👤 ${j.name}</strong>
-            <table class="rank-table" style="margin-top:8px;">
-                <thead><tr><th>อันดับ</th><th>ผลงาน</th><th>คะแนนถ่วงน้ำหนัก</th></tr></thead><tbody>`;
-        if (jWorks.length === 0) {
-            html += '<tr><td colspan="3" style="text-align:center;color:#999;">ยังไม่มีคะแนน</td></tr>';
-        } else {
-            jWorks.forEach((w, i) => {
-                const medal = ['🥇','🥈','🥉'][i] || (i+1);
-                const cls = i < 3 ? `rank-${i+1}` : '';
-                html += `<tr class="${cls}"><td>${medal}</td><td>${w.work.title}</td><td><strong>${w.total.toFixed(2)}</strong></td></tr>`;
-            });
-        }
-        html += '</tbody></table></div>';
-    });
-    html += '</div>';
-
-    // สรุปกรรมการ
-    html += '<div class="card"><h2>📈 สรุปคะแนนเฉลี่ยของกรรมการ</h2><br>';
-    html += '<table class="rank-table"><thead><tr><th>อันดับ</th><th>กรรมการ</th><th>จำนวนผลงานที่ให้คะแนน</th><th>คะแนนเฉลี่ย</th></tr></thead><tbody>';
-    judgeStats.forEach((j, i) => {
-        html += `<tr><td>${i+1}</td><td>${j.judge.name}</td><td>${j.scoredWorks}</td><td><strong>${j.avg.toFixed(2)}</strong></td></tr>`;
-    });
-    html += '</tbody></table></div>';
-
-    document.getElementById('rankingArea').innerHTML = html;
-}
-
-// ---------- บันทึกก่อนปิด ----------
-window.addEventListener('beforeunload', (e) => {
-    if (Object.keys(saveQueue).length > 0) {
-        flushSave();
+    if (top > 30 && !state.searchCollapsed && !deskKeepOpen) {
+      const spare = tableWrap.scrollHeight - tableWrap.clientHeight;
+      if (spare > searchPanel.offsetHeight + 60) {
+        autoCollapsed = true;
+        deskLockUntil = performance.now() + 400;
+        setSearchCollapsed(true);
+      }
     }
+  });
+}
+tableWrap.addEventListener('scroll', onTableScroll, { passive: true });
+
+barMain.addEventListener('click', onBarToggle);
+document.getElementById('btnToggleAll').addEventListener('click', toggleAllCards);
+
+/* ------------------------------------------------------------------ */
+/* กรอกคะแนน                                                           */
+/* ------------------------------------------------------------------ */
+function handleScoreInput(e) {
+  const input = e.target;
+  const workId = input.dataset.work;
+  const critId = input.dataset.crit;
+  let raw = input.value.trim();
+
+  if (raw === '') {
+    input.classList.remove('filled', 'invalid');
+    setScore(state.categoryId, state.judgeId, workId, critId, null);
+    refreshAfterScoreChange();
+    return;
+  }
+
+  let num = parseFloat(raw);
+  if (isNaN(num) || num < 1 || num > 10) {
+    input.classList.add('invalid');
+    input.classList.remove('filled');
+    return;
+  }
+
+  num = Math.round(num * 2) / 2;
+  input.classList.remove('invalid');
+  input.classList.add('filled');
+  setScore(state.categoryId, state.judgeId, workId, critId, num);
+
+  if (input.classList.contains('mobile-score-input')) {
+    const crit = CRITERIA[state.categoryId].find(c => c.id === critId);
+    const preview = input.parentElement.querySelector('.weighted-preview');
+    if (preview && crit) {
+      preview.textContent = ((num * crit.weight) / 100).toFixed(2) + ' คะแนน';
+    }
+  }
+
+  refreshAfterScoreChange();
+}
+
+function handleScoreBlur(e) {
+  const input = e.target;
+  const raw = input.value.trim();
+  if (raw === '') return;
+  let num = parseFloat(raw);
+  if (isNaN(num)) {
+    input.value = '';
+    input.classList.remove('filled', 'invalid');
+    setScore(state.categoryId, state.judgeId, input.dataset.work, input.dataset.crit, null);
+    refreshAfterScoreChange();
+    return;
+  }
+  num = Math.max(1, Math.min(10, Math.round(num * 2) / 2));
+  input.value = num;
+  input.classList.add('filled');
+  input.classList.remove('invalid');
+  setScore(state.categoryId, state.judgeId, input.dataset.work, input.dataset.crit, num);
+  refreshAfterScoreChange();
+}
+
+function refreshAfterScoreChange() {
+  updateRankingsAndScores();
+  updateProgressCard();
+  renderMobileSummary();
+}
+
+function updateRankingsAndScores() {
+  const { rankMap } = calcRankings(state.categoryId, state.judgeId);
+  const works = WORKS[state.categoryId] || [];
+
+  const tbody = document.getElementById('tableBody');
+  if (tbody) {
+    tbody.querySelectorAll('tr').forEach((row, idx) => {
+      if (!works[idx]) return;
+      const w = works[idx];
+      const weighted = calcWeightedScore(state.categoryId, state.judgeId, w.id);
+      const rank = rankMap[w.id];
+      const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other';
+      const rankCell = row.children[2];
+      const scoreCell = row.children[3];
+      if (rankCell) rankCell.innerHTML = rank ? `<span class="rank-badge ${rankClass}">${rank}</span>` : '<span style="color:var(--gray-300)">-</span>';
+      if (scoreCell) scoreCell.textContent = weighted !== null ? weighted.toFixed(2) : '-';
+    });
+  }
+
+  document.querySelectorAll('#mobileView .mobile-card').forEach((card, idx) => {
+    if (!works[idx]) return;
+    const w = works[idx];
+    const weighted = calcWeightedScore(state.categoryId, state.judgeId, w.id);
+    const rank = rankMap[w.id];
+    const rankEl = card.querySelector('.rank-value');
+    const scoreEl = card.querySelector('.score-summary .s-value');
+    if (rankEl) rankEl.textContent = rank || '-';
+    if (scoreEl) scoreEl.textContent = weighted !== null ? weighted.toFixed(2) : '-';
+  });
+}
+
+document.getElementById('categorySelect').addEventListener('change', (e) => {
+  state.categoryId = e.target.value;
+  const judges = JUDGES[state.categoryId] || [];
+  state.judgeId = judges[0]?.id || '';
+  renderJudgeSelect();
+  renderAll();
 });
 
-// ---------- Init ----------
-initDB();
-initHome();
+document.getElementById('judgeSelect').addEventListener('change', (e) => {
+  state.judgeId = e.target.value;
+  renderAll();
+});
+
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+    toast.style.transition = 'all 0.3s';
+    setTimeout(() => toast.remove(), 300);
+  }, 2000);
+}
+
+function renderAll() {
+  renderInfoPanel();
+  renderDesktopTable();
+  renderMobileCards();
+  renderMobileSummary();
+  updateToggleAllButton();
+  setupStickyHeaders();
+}
+
+function init() {
+  loadFromStorage();
+  renderCategorySelect();
+  renderJudgeSelect();
+  setSearchCollapsed(false);
+  renderAll();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(setupStickyHeaders);
+  setTimeout(() => showToast('ระบบพร้อมใช้งาน — Auto Save เปิดอยู่', 'success'), 500);
+}
+
+init();
 </script>
 </body>
 </html>
