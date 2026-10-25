@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XAUUSD Realtime Analyzer | วิเคราะห์ราคาทองคำ</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b0e11;
+      --card: #141a21;
+      --border: #1e2732;
+      --gold: #f0b90b;
+      --gold-dim: #c99a06;
+      --green: #0ecb81;
+      --red: #f6465d;
+      --text: #eaecef;
+      --muted: #848e9c;
+      --blue: #3861fb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .container { max-width: 1400px; margin: 0 auto; padding: 16px; }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 0 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-icon {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, #f0b90b, #c99a06);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 800; color: #0b0e11;
+    }
+    .logo h1 { font-size: 1.35rem; font-weight: 700; }
+    .logo span { color: var(--muted); font-size: 0.85rem; display: block; }
+    .price-box {
+      text-align: right;
+    }
+    .price-main {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .price-main.up { color: var(--green); }
+    .price-main.down { color: var(--red); }
+    .price-change {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .price-change.up { color: var(--green); }
+    .price-change.down { color: var(--red); }
+    .updated {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+    }
+    @media (max-width: 1000px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .card-title {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .chart-wrap {
+      position: relative;
+      height: 380px;
+    }
+    .chart-wrap.small { height: 160px; }
+    .signal-card {
+      text-align: center;
+      padding: 20px 16px;
+    }
+    .signal-badge {
+      display: inline-block;
+      padding: 8px 28px;
+      border-radius: 8px;
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .signal-badge.buy { background: rgba(14,203,129,0.15); color: var(--green); border: 1px solid var(--green); }
+    .signal-badge.sell { background: rgba(246,70,93,0.15); color: var(--red); border: 1px solid var(--red); }
+    .signal-badge.hold { background: rgba(240,185,11,0.12); color: var(--gold); border: 1px solid var(--gold); }
+    .signal-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .levels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      text-align: left;
+    }
+    .level-item {
+      background: #0f1419;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .level-item label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .level-item strong {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .level-item.tp strong { color: var(--green); }
+    .level-item.sl strong { color: var(--red); }
+    .level-item.support strong { color: #3b82f6; }
+    .level-item.resist strong { color: #f59e0b; }
+    .indicators {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .ind-box {
+      background: #0f1419;
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    .ind-box label {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .ind-box .val {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .ind-box .val.up { color: var(--green); }
+    .ind-box .val.down { color: var(--red); }
+    .status-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot.warn { background: var(--gold); }
+    .btn-refresh {
+      background: var(--gold);
+      color: #0b0e11;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .btn-refresh:hover { background: #ffd54f; }
+    .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+    .trend-box {
+      margin-top: 14px;
+      padding: 12px;
+      background: #0f1419;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    .trend-box strong { color: var(--gold); }
+    footer {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    footer a { color: var(--gold); text-decoration: none; }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">Au</div>
+        <div>
+          <h1>XAUUSD Analyzer</h1>
+          <span>วิเคราะห์ราคาทองคำ Realtime + แนวโน้ม 1 ชม.</span>
+        </div>
+      </div>
+      <div class="price-box">
+        <div class="price-main" id="priceMain">—</div>
+        <div class="price-change" id="priceChange">—</div>
+        <div class="updated" id="updated">กำลังโหลด...</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Left: Charts -->
+      <div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-title">กราฟราคา + Moving Average + Bollinger Bands</div>
+          <div class="chart-wrap">
+            <canvas id="priceChart"></canvas>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="card">
+            <div class="card-title">RSI (14)</div>
+            <div class="chart-wrap small">
+              <canvas id="rsiChart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">MACD (12,26,9)</div>
+            <div class="chart-wrap small">
+              <canvas id="macdChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Signals -->
+      <div>
+        <div class="card signal-card" style="margin-bottom:16px;">
+          <div class="card-title">สัญญาณเทรด (1 ชั่วโมง)</div>
+          <div class="signal-badge hold" id="signalBadge">HOLD</div>
+          <div class="signal-desc" id="signalDesc">กำลังวิเคราะห์...</div>
+          <div class="levels">
+            <div class="level-item">
+              <label>จุดเข้า (Entry)</label>
+              <strong id="entry">—</strong>
+            </div>
+            <div class="level-item tp">
+              <label>ทำกำไร (TP)</label>
+              <strong id="tp">—</strong>
+            </div>
+            <div class="level-item sl">
+              <label>ตัดขาดทุน (SL)</label>
+              <strong id="sl">—</strong>
+            </div>
+            <div class="level-item">
+              <label>Risk : Reward</label>
+              <strong id="rr">—</strong>
+            </div>
+            <div class="level-item support">
+              <label>แนวรับ (Support)</label>
+              <strong id="support">—</strong>
+            </div>
+            <div class="level-item resist">
+              <label>แนวต้าน (Resistance)</label>
+              <strong id="resist">—</strong>
+            </div>
+          </div>
+          <div class="trend-box" id="trendText">
+            แนวโน้ม 1 ชม. ข้างหน้า: <strong>—</strong>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Indicators</div>
+          <div class="indicators">
+            <div class="ind-box">
+              <label>MA5</label>
+              <div class="val" id="ma5">—</div>
+            </div>
+            <div class="ind-box">
+              <label>MA15</label>
+              <div class="val" id="ma15">—</div>
+            </div>
+            <div class="ind-box">
+              <label>MA30</label>
+              <div class="val" id="ma30">—</div>
+            </div>
+            <div class="ind-box">
+              <label>MA1H (12×5m)</label>
+              <div class="val" id="ma1h">—</div>
+            </div>
+            <div class="ind-box">
+              <label>BB Upper</label>
+              <div class="val" id="bbUpper">—</div>
+            </div>
+            <div class="ind-box">
+              <label>BB Lower</label>
+              <div class="val" id="bbLower">—</div>
+            </div>
+            <div class="ind-box">
+              <label>RSI</label>
+              <div class="val" id="rsiVal">—</div>
+            </div>
+            <div class="ind-box">
+              <label>MACD</label>
+              <div class="val" id="macdVal">—</div>
+            </div>
+          </div>
+          <div class="status-bar">
+            <span><span class="dot live" id="liveDot"></span><span id="statusText">กำลังเชื่อมต่อ...</span></span>
+            <button class="btn-refresh" id="btnRefresh" onclick="manualRefresh()">รีเฟรช</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      ข้อมูลราคาจาก <a href="https://gold-api.com" target="_blank">gold-api.com</a> (Live) + Yahoo Finance GC=F (Intraday)<br>
+      ใช้เพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำการลงทุน | อัปเดตทุก 60 วินาที
+    </footer>
+  </div>
+
+  <script>
+    // ========== State ==========
+    let priceChart, rsiChart, macdChart;
+    let candles = [];       // {t, o, h, l, c}
+    let lastPrice = null;
+    let prevClose = null;
+    let isRefreshing = false;
+
+    // ========== Helpers ==========
+    function sma(data, period) {
+      const out = [];
+      for (let i = 0; i < data.length; i++) {
+        if (i < period - 1) { out.push(null); continue; }
+        let sum = 0;
+        for (let j = 0; j < period; j++) sum += data[i - j];
+        out.push(sum / period);
+      }
+      return out;
+    }
+
+    function ema(data, period) {
+      const out = [];
+      const k = 2 / (period + 1);
+      let prev = null;
+      for (let i = 0; i < data.length; i++) {
+        if (data[i] == null) { out.push(null); continue; }
+        if (prev === null) {
+          // seed with SMA
+          if (i < period - 1) { out.push(null); continue; }
+          let sum = 0;
+          for (let j = 0; j < period; j++) sum += data[i - j];
+          prev = sum / period;
+          out.push(prev);
+        } else {
+          prev = data[i] * k + prev * (1 - k);
+          out.push(prev);
+        }
+      }
+      return out;
+    }
+
+    function bollinger(closes, period = 20, mult = 2) {
+      const mid = sma(closes, period);
+      const upper = [], lower = [];
+      for (let i = 0; i < closes.length; i++) {
+        if (mid[i] == null) { upper.push(null); lower.push(null); continue; }
+        let sumSq = 0;
+        for (let j = 0; j < period; j++) {
+          const d = closes[i - j] - mid[i];
+          sumSq += d * d;
+        }
+        const std = Math.sqrt(sumSq / period);
+        upper.push(mid[i] + mult * std);
+        lower.push(mid[i] - mult * std);
+      }
+      return { mid, upper, lower };
+    }
+
+    function rsi(closes, period = 14) {
+      const out = [];
+      let gains = 0, losses = 0;
+      for (let i = 0; i < closes.length; i++) {
+        if (i === 0) { out.push(null); continue; }
+        const diff = closes[i] - closes[i - 1];
+        const gain = diff > 0 ? diff : 0;
+        const loss = diff < 0 ? -diff : 0;
+        if (i <= period) {
+          gains += gain;
+          losses += loss;
+          if (i < period) { out.push(null); continue; }
+          // first RSI
+          const avgGain = gains / period;
+          const avgLoss = losses / period;
+          const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+          out.push(100 - (100 / (1 + rs)));
+          // store for next
+          out._avgGain = avgGain;
+          out._avgLoss = avgLoss;
+        } else {
+          out._avgGain = (out._avgGain * (period - 1) + gain) / period;
+          out._avgLoss = (out._avgLoss * (period - 1) + loss) / period;
+          const rs = out._avgLoss === 0 ? 100 : out._avgGain / out._avgLoss;
+          out.push(100 - (100 / (1 + rs)));
+        }
+      }
+      return out;
+    }
+
+    function macd(closes, fast = 12, slow = 26, signal = 9) {
+      const emaFast = ema(closes, fast);
+      const emaSlow = ema(closes, slow);
+      const macdLine = emaFast.map((v, i) => (v != null && emaSlow[i] != null) ? v - emaSlow[i] : null);
+      const signalLine = ema(macdLine.map(v => v == null ? 0 : v), signal);
+      // fix signal where macd was null
+      for (let i = 0; i < signalLine.length; i++) {
+        if (macdLine[i] == null) signalLine[i] = null;
+      }
+      const hist = macdLine.map((v, i) => (v != null && signalLine[i] != null) ? v - signalLine[i] : null);
+      return { macdLine, signalLine, hist };
+    }
+
+    function fmt(n, d = 2) {
+      if (n == null || isNaN(n)) return '—';
+      return Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+    }
+
+    // ========== Data Fetch ==========
+    async function fetchLivePrice() {
+      try {
+        const res = await fetch('https://api.gold-api.com/price/XAU', { cache: 'no-store' });
+        if (!res.ok) throw new Error('live fail');
+        const data = await res.json();
+        return {
+          price: data.price,
+          updatedAt: data.updatedAt || data.updatedAtReadable
+        };
+      } catch (e) {
+        // fallback xaus
+        try {
+          const res2 = await fetch('https://xaus.com/api/v1/spot?compact=1', { cache: 'no-store' });
+          const d2 = await res2.json();
+          return { price: d2.spot_usd_oz || d2.xau?.price, updatedAt: d2.updated_at };
+        } catch (e2) {
+          return null;
+        }
+      }
+    }
+
+    async function fetchCandles() {
+      // Yahoo GC=F 5m via CORS proxy
+      const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=5m&range=5d';
+      const proxies = [
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent(yahooUrl),
+        'https://corsproxy.io/?' + encodeURIComponent(yahooUrl)
+      ];
+      for (const url of proxies) {
+        try {
+          const res = await fetch(url, { cache: 'no-store' });
+          if (!res.ok) continue;
+          const json = await res.json();
+          const result = json.chart?.result?.[0];
+          if (!result) continue;
+          const ts = result.timestamp || [];
+          const q = result.indicators?.quote?.[0];
+          if (!q) continue;
+          const out = [];
+          for (let i = 0; i < ts.length; i++) {
+            if (q.close[i] == null) continue;
+            out.push({
+              t: ts[i] * 1000,
+              o: q.open[i],
+              h: q.high[i],
+              l: q.low[i],
+              c: q.close[i]
+            });
+          }
+          if (out.length > 30) return out;
+        } catch (e) { /* try next */ }
+      }
+      return null;
+    }
+
+    // ========== Analysis ==========
+    function analyze(candles, livePrice) {
+      if (!candles || candles.length < 40) return null;
+      const closes = candles.map(c => c.c);
+      const highs = candles.map(c => c.h);
+      const lows = candles.map(c => c.l);
+
+      // MAs (on 5m candles)
+      const ma5 = sma(closes, 5);
+      const ma15 = sma(closes, 15);
+      const ma30 = sma(closes, 30);
+      const ma1h = sma(closes, 12); // 12 * 5m ≈ 1 hour
+
+      const bb = bollinger(closes, 20, 2);
+      const rsiArr = rsi(closes, 14);
+      const macdObj = macd(closes);
+
+      const last = closes.length - 1;
+      const price = livePrice || closes[last];
+
+      // Support / Resistance (recent swing)
+      const lookback = Math.min(48, closes.length); // ~4 hours
+      let support = Infinity, resist = -Infinity;
+      for (let i = last - lookback + 1; i <= last; i++) {
+        if (lows[i] < support) support = lows[i];
+        if (highs[i] > resist) resist = highs[i];
+      }
+      // round to nicer levels
+      support = Math.floor(support / 2) * 2;
+      resist = Math.ceil(resist / 2) * 2;
+
+      // Signals
+      const m5 = ma5[last], m15 = ma15[last], m30 = ma30[last], m1h = ma1h[last];
+      const r = rsiArr[last];
+      const macdL = macdObj.macdLine[last];
+      const sigL = macdObj.signalLine[last];
+      const hist = macdObj.hist[last];
+      const bbU = bb.upper[last], bbL = bb.lower[last], bbM = bb.mid[last];
+
+      let score = 0;
+      // MA trend
+      if (m5 > m15 && m15 > m30) score += 2;
+      else if (m5 < m15 && m15 < m30) score -= 2;
+      else if (m5 > m15) score += 1;
+      else if (m5 < m15) score -= 1;
+
+      // Price vs MA1H
+      if (price > m1h) score += 1;
+      else score -= 1;
+
+      // RSI
+      if (r < 30) score += 1.5;
+      else if (r > 70) score -= 1.5;
+      else if (r > 55) score += 0.5;
+      else if (r < 45) score -= 0.5;
+
+      // MACD
+      if (macdL > sigL && hist > 0) score += 1.5;
+      else if (macdL < sigL && hist < 0) score -= 1.5;
+
+      // Bollinger
+      if (price < bbL) score += 1;
+      else if (price > bbU) score -= 1;
+
+      let signal = 'HOLD';
+      let desc = 'สัญญาณยังไม่ชัดเจน รอ confirmation';
+      if (score >= 3) {
+        signal = 'BUY';
+        desc = 'แนวโน้มขาขึ้นระยะสั้น แรงซื้อเข้ามา MA เรียงตัว + MACD/RSI สนับสนุน';
+      } else if (score <= -3) {
+        signal = 'SELL';
+        desc = 'แนวโน้มขาลงระยะสั้น แรงขายเข้ามา MA เรียงตัวลง + MACD/RSI ยืนยัน';
+      } else if (score >= 1.5) {
+        signal = 'BUY';
+        desc = 'มีโอกาสขึ้นเล็กน้อย แต่ยังไม่แรงมาก ระวังการกลับตัว';
+      } else if (score <= -1.5) {
+        signal = 'SELL';
+        desc = 'มีโอกาสลงเล็กน้อย แต่ยังไม่แรงมาก ระวังการกลับตัว';
+      }
+
+      // Entry / TP / SL
+      let entry = price;
+      let tp, sl;
+      const atrApprox = (resist - support) / 4 || 8; // rough volatility
+
+      if (signal === 'BUY') {
+        entry = Math.round(price * 100) / 100;
+        tp = Math.round((Math.min(resist, price + atrApprox * 1.8)) * 100) / 100;
+        sl = Math.round((Math.max(support, price - atrApprox * 1.1)) * 100) / 100;
+      } else if (signal === 'SELL') {
+        entry = Math.round(price * 100) / 100;
+        tp = Math.round((Math.max(support, price - atrApprox * 1.8)) * 100) / 100;
+        sl = Math.round((Math.min(resist, price + atrApprox * 1.1)) * 100) / 100;
+      } else {
+        tp = Math.round((price + atrApprox) * 100) / 100;
+        sl = Math.round((price - atrApprox) * 100) / 100;
+      }
+
+      const risk = Math.abs(entry - sl);
+      const reward = Math.abs(tp - entry);
+      const rr = risk > 0 ? (reward / risk).toFixed(2) : '—';
+
+      // 1h trend text
+      let trend1h = 'Sideways / ไม่ชัดเจน';
+      if (score >= 2.5) trend1h = 'ขาขึ้น (Bullish) มีโอกาสไปทดสอบแนวต้าน';
+      else if (score <= -2.5) trend1h = 'ขาลง (Bearish) มีโอกาสไปทดสอบแนวรับ';
+      else if (score > 0) trend1h = 'เอียงขึ้นเล็กน้อย ระวัง consolidation';
+      else if (score < 0) trend1h = 'เอียงลงเล็กน้อย ระวัง consolidation';
+
+      return {
+        signal, desc, score,
+        entry, tp, sl, rr,
+        support, resist,
+        trend1h,
+        ma5: m5, ma15: m15, ma30: m30, ma1h: m1h,
+        bbUpper: bbU, bbLower: bbL, bbMid: bbM,
+        rsi: r, macd: macdL, macdSignal: sigL, macdHist: hist,
+        closes, ma5Arr: ma5, ma15Arr: ma15, ma30Arr: ma30,
+        bb, rsiArr, macdObj, candles
+      };
+    }
+
+    // ========== Charts ==========
+    function initCharts() {
+      const commonOpts = {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { labels: { color: '#848e9c', boxWidth: 12, font: { size: 11 } } }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#848e9c', maxTicksLimit: 8, font: { size: 10 } },
+            grid: { color: 'rgba(30,39,50,0.6)' }
+          },
+          y: {
+            ticks: { color: '#848e9c', font: { size: 10 } },
+            grid: { color: 'rgba(30,39,50,0.6)' }
+          }
+        }
+      };
+
+      priceChart = new Chart(document.getElementById('priceChart'), {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+          ...commonOpts,
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            ...commonOpts.scales,
+            y: { ...commonOpts.scales.y, position: 'right' }
+          }
+        }
+      });
+
+      rsiChart = new Chart(document.getElementById('rsiChart'), {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+          ...commonOpts,
+          scales: {
+            x: { display: false },
+            y: {
+              min: 0, max: 100,
+              ticks: { color: '#848e9c', font: { size: 10 }, stepSize: 20 },
+              grid: { color: 'rgba(30,39,50,0.6)' }
+            }
+          },
+          plugins: {
+            ...commonOpts.plugins,
+            annotation: {
+              annotations: {
+                line70: { type: 'line', yMin: 70, yMax: 70, borderColor: 'rgba(246,70,93,0.5)', borderWidth: 1 },
+                line30: { type: 'line', yMin: 30, yMax: 30, borderColor: 'rgba(14,203,129,0.5)', borderWidth: 1 }
+              }
+            }
+          }
+        }
+      });
+
+      macdChart = new Chart(document.getElementById('macdChart'), {
+        type: 'bar',
+        data: { labels: [], datasets: [] },
+        options: {
+          ...commonOpts,
+          scales: {
+            x: { display: false },
+            y: {
+              ticks: { color: '#848e9c', font: { size: 10 } },
+              grid: { color: 'rgba(30,39,50,0.6)' }
+            }
+          }
+        }
+      });
+    }
+
+    function updateCharts(a) {
+      if (!a) return;
+      const labels = a.candles.map(c => {
+        const d = new Date(c.t);
+        return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+      });
+
+      // Price chart
+      priceChart.data.labels = labels;
+      priceChart.data.datasets = [
+        {
+          label: 'ราคา',
+          data: a.closes,
+          borderColor: '#f0b90b',
+          backgroundColor: 'rgba(240,185,11,0.05)',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.1
+        },
+        {
+          label: 'MA5',
+          data: a.ma5Arr,
+          borderColor: '#3861fb',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.1
+        },
+        {
+          label: 'MA15',
+          data: a.ma15Arr,
+          borderColor: '#0ecb81',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.1
+        },
+        {
+          label: 'MA30',
+          data: a.ma30Arr,
+          borderColor: '#f6465d',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.1
+        },
+        {
+          label: 'BB Upper',
+          data: a.bb.upper,
+          borderColor: 'rgba(132,142,156,0.6)',
+          borderWidth: 1,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          fill: false
+        },
+        {
+          label: 'BB Lower',
+          data: a.bb.lower,
+          borderColor: 'rgba(132,142,156,0.6)',
+          borderWidth: 1,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          fill: '-1',
+          backgroundColor: 'rgba(132,142,156,0.08)'
+        }
+      ];
+      priceChart.update();
+
+      // RSI
+      rsiChart.data.labels = labels;
+      rsiChart.data.datasets = [{
+        label: 'RSI',
+        data: a.rsiArr,
+        borderColor: '#a855f7',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.1,
+        fill: false
+      }];
+      rsiChart.update();
+
+      // MACD
+      macdChart.data.labels = labels;
+      macdChart.data.datasets = [
+        {
+          type: 'bar',
+          label: 'Histogram',
+          data: a.macdObj.hist,
+          backgroundColor: a.macdObj.hist.map(v => v >= 0 ? 'rgba(14,203,129,0.6)' : 'rgba(246,70,93,0.6)')
+        },
+        {
+          type: 'line',
+          label: 'MACD',
+          data: a.macdObj.macdLine,
+          borderColor: '#3861fb',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.1
+        },
+        {
+          type: 'line',
+          label: 'Signal',
+          data: a.macdObj.signalLine,
+          borderColor: '#f59e0b',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.1
+        }
+      ];
+      macdChart.update();
+    }
+
+    // ========== UI Update ==========
+    function updateUI(live, analysis) {
+      if (live) {
+        const el = document.getElementById('priceMain');
+        el.textContent = '$' + fmt(live.price);
+        if (lastPrice != null) {
+          const chg = live.price - lastPrice;
+          const pct = (chg / lastPrice) * 100;
+          const chgEl = document.getElementById('priceChange');
+          if (chg >= 0) {
+            el.className = 'price-main up';
+            chgEl.className = 'price-change up';
+            chgEl.textContent = `+${fmt(chg)} (+${fmt(pct)}%)`;
+          } else {
+            el.className = 'price-main down';
+            chgEl.className = 'price-change down';
+            chgEl.textContent = `${fmt(chg)} (${fmt(pct)}%)`;
+          }
+        }
+        lastPrice = live.price;
+        const t = live.updatedAt ? new Date(live.updatedAt) : new Date();
+        document.getElementById('updated').textContent =
+          'อัปเดต: ' + t.toLocaleString('th-TH');
+      }
+
+      if (!analysis) return;
+
+      // Signal
+      const badge = document.getElementById('signalBadge');
+      badge.textContent = analysis.signal;
+      badge.className = 'signal-badge ' + analysis.signal.toLowerCase();
+      document.getElementById('signalDesc').textContent = analysis.desc;
+
+      document.getElementById('entry').textContent = '$' + fmt(analysis.entry);
+      document.getElementById('tp').textContent = '$' + fmt(analysis.tp);
+      document.getElementById('sl').textContent = '$' + fmt(analysis.sl);
+      document.getElementById('rr').textContent = analysis.rr + ' : 1';
+      document.getElementById('support').textContent = '$' + fmt(analysis.support);
+      document.getElementById('resist').textContent = '$' + fmt(analysis.resist);
+
+      document.getElementById('trendText').innerHTML =
+        'แนวโน้ม 1 ชม. ข้างหน้า: <strong>' + analysis.trend1h + '</strong><br>' +
+        '<span style="font-size:0.8rem;color:#848e9c">คะแนนสัญญาณ: ' + analysis.score.toFixed(1) + ' (บวก=Buy / ลบ=Sell)</span>';
+
+      // Indicators
+      const setInd = (id, val, price) => {
+        const el = document.getElementById(id);
+        el.textContent = fmt(val);
+        if (price != null && val != null) {
+          el.className = 'val ' + (val > price ? 'up' : 'down');
+        }
+      };
+      const p = live?.price || analysis.closes[analysis.closes.length - 1];
+      setInd('ma5', analysis.ma5, p);
+      setInd('ma15', analysis.ma15, p);
+      setInd('ma30', analysis.ma30, p);
+      setInd('ma1h', analysis.ma1h, p);
+      document.getElementById('bbUpper').textContent = fmt(analysis.bbUpper);
+      document.getElementById('bbLower').textContent = fmt(analysis.bbLower);
+
+      const rsiEl = document.getElementById('rsiVal');
+      rsiEl.textContent = fmt(analysis.rsi, 1);
+      rsiEl.className = 'val ' + (analysis.rsi > 70 ? 'down' : analysis.rsi < 30 ? 'up' : '');
+
+      const macdEl = document.getElementById('macdVal');
+      macdEl.textContent = fmt(analysis.macd, 2);
+      macdEl.className = 'val ' + (analysis.macdHist >= 0 ? 'up' : 'down');
+
+      document.getElementById('statusText').textContent = 'ข้อมูลพร้อม | แท่งเทียน ' + analysis.candles.length + ' แท่ง';
+      document.getElementById('liveDot').className = 'dot live';
+    }
+
+    // ========== Main Loop ==========
+    async function refresh() {
+      if (isRefreshing) return;
+      isRefreshing = true;
+      document.getElementById('btnRefresh').disabled = true;
+      document.getElementById('statusText').textContent = 'กำลังโหลดข้อมูล...';
+
+      try {
+        const [live, hist] = await Promise.all([
+          fetchLivePrice(),
+          candles.length < 40 ? fetchCandles() : Promise.resolve(candles)
+        ]);
+
+        if (hist && hist.length > 40) {
+          candles = hist;
+          // update last candle close with live if available
+          if (live && candles.length) {
+            candles[candles.length - 1].c = live.price;
+          }
+        }
+
+        const analysis = analyze(candles, live?.price);
+        updateUI(live, analysis);
+        if (analysis) updateCharts(analysis);
+
+        if (!live && !analysis) {
+          document.getElementById('statusText').textContent = 'โหลดข้อมูลไม่สำเร็จ ลองรีเฟรชใหม่';
+          document.getElementById('liveDot').className = 'dot warn';
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('statusText').textContent = 'เกิดข้อผิดพลาด: ' + err.message;
+        document.getElementById('liveDot').className = 'dot warn';
+      }
+
+      isRefreshing = false;
+      document.getElementById('btnRefresh').disabled = false;
+    }
+
+    function manualRefresh() {
+      candles = []; // force re-fetch history
+      refresh();
+    }
+
+    // Init
+    initCharts();
+    refresh();
+    setInterval(refresh, 60000); // every 60s
+  </script>
+</body>
+</html>
