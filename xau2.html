@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XAUUSD Realtime Analyzer | วิเคราะห์ทองคำ 1 ชั่วโมง</title>
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --card: #151a23;
+            --text: #e6e9ef;
+            --muted: #8b95a5;
+            --gold: #f5c542;
+            --buy: #00c853;
+            --sell: #ff3d00;
+            --neutral: #ffab00;
+            --border: #2a3342;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 20px; }
+        .container { width: 100%; max-width: 900px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+        h1 { font-size: 1.4rem; font-weight: 600; color: var(--gold); letter-spacing: 0.5px; }
+        .status { font-size: 0.75rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--buy); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+        .card-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+        .price { font-size: 2.2rem; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
+        .change { font-size: 0.85rem; margin-top: 4px; }
+        .up { color: var(--buy); }
+        .down { color: var(--sell); }
+
+        .signal-card { text-align: center; border-width: 2px; transition: border-color 0.3s; }
+        .signal-card.buy { border-color: var(--buy); }
+        .signal-card.sell { border-color: var(--sell); }
+        .signal-card.neutral { border-color: var(--neutral); }
+        .signal-badge { display: inline-block; padding: 8px 28px; border-radius: 50px; font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; margin: 10px 0; }
+        .signal-badge.buy { background: rgba(0,200,83,0.15); color: var(--buy); }
+        .signal-badge.sell { background: rgba(255,61,0,0.15); color: var(--sell); }
+        .signal-badge.neutral { background: rgba(255,171,0,0.15); color: var(--neutral); }
+        .signal-sub { font-size: 0.78rem; color: var(--muted); }
+
+        .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .metric { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+        .metric .k { font-size: 0.68rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.5px; }
+        .metric .v { font-size: 1.25rem; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+        .levels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .level { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+        .level .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+        .level .value { font-size: 1.3rem; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+        .level.entry .value { color: var(--gold); }
+        .level.tp .value { color: var(--buy); }
+        .level.sl .value { color: var(--sell); }
+
+        .chart-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+        .chart-wrap canvas { width: 100%; height: 160px; display: block; }
+
+        .indicators { display: flex; justify-content: space-around; padding: 14px 0; font-size: 0.85rem; }
+        .ind { text-align: center; }
+        .ind .ik { color: var(--muted); font-size: 0.7rem; text-transform: uppercase; }
+        .ind .iv { font-weight: 600; margin-top: 2px; }
+
+        footer { text-align: center; font-size: 0.68rem; color: var(--muted); line-height: 1.6; padding-top: 10px; border-top: 1px solid var(--border); }
+        .error { color: var(--sell); font-size: 0.8rem; text-align: center; margin-top: 8px; }
+
+        @media (max-width: 600px) {
+            .grid, .metrics, .levels { grid-template-columns: 1fr; }
+            .price { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🥇 XAUUSD Analyzer</h1>
+        <div class="status"><span class="dot" id="liveDot"></span><span id="lastUpdate">กำลังเชื่อมต่อ...</span></div>
+    </header>
+
+    <div class="grid">
+        <div class="card">
+            <div class="card-label">ราคาปัจจุบัน (Spot)</div>
+            <div class="price" id="currentPrice">--</div>
+            <div class="change" id="priceChange">--</div>
+        </div>
+        <div class="card signal-card neutral" id="signalCard">
+            <div class="card-label">แนวโน้ม 1 ชั่วโมง</div>
+            <div class="signal-badge neutral" id="signalBadge">NEUTRAL</div>
+            <div class="signal-sub" id="signalReason">รอข้อมูล...</div>
+        </div>
+    </div>
+
+    <div class="metrics">
+        <div class="metric"><div class="k">SMA 20 นาที</div><div class="v" id="smaShort">--</div></div>
+        <div class="metric"><div class="k">SMA 60 นาที</div><div class="v" id="smaLong">--</div></div>
+        <div class="metric"><div class="k">RSI (14)</div><div class="v" id="rsiVal">--</div></div>
+    </div>
+
+    <div class="levels">
+        <div class="level entry"><div class="label">จุดเข้า (Entry)</div><div class="value" id="entryPrice">--</div></div>
+        <div class="level tp"><div class="label">ทำกำไร (TP)</div><div class="value" id="tpPrice">--</div></div>
+        <div class="level sl"><div class="label">ตัดขาดทุน (SL)</div><div class="value" id="slPrice">--</div></div>
+    </div>
+
+    <div class="chart-wrap">
+        <canvas id="chartCanvas" width="800" height="160"></canvas>
+        <div class="indicators">
+            <div class="ind"><div class="ik">ความผันผวน (ATR)</div><div class="iv" id="atrVal">--</div></div>
+            <div class="ind"><div class="ik">โมเมนตัม</div><div class="iv" id="momentumVal">--</div></div>
+            <div class="ind"><div class="ik">ข้อมูล (นาที)</div><div class="iv" id="dataCoverage">--</div></div>
+        </div>
+    </div>
+
+    <div class="error" id="errorMsg"></div>
+
+    <footer>
+        ข้อมูลจาก xaus.com (ฟรี, ไม่ใช้ API Key) • การวิเคราะห์เพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน<br>
+        XAUUSD เป็นสินทรัพย์ที่มีความผันผวนสูง โปรดบริหารความเสี่ยงอย่างระมัดระวัง
+    </footer>
+</div>
+
+<script>
+(function() {
+    // ---------- Configuration ----------
+    const SPOT_URL = 'https://xaus.com/api/v1/spot?compact=1';
+    const INTRADAY_URL = 'https://xaus.com/api/v1/intraday?symbol=xau&hours=2';
+    const REFRESH_SPOT_MS = 5000;      // 5 seconds
+    const REFRESH_INTRADAY_MS = 30000; // 30 seconds
+
+    // ---------- State ----------
+    let currentPrice = null;
+    let prevPrice = null;
+    let intradayPoints = []; // {t: unix seconds, p: price}
+    let lastSpotFetch = 0;
+    let lastIntradayFetch = 0;
+
+    // ---------- DOM refs ----------
+    const el = {
+        price: document.getElementById('currentPrice'),
+        change: document.getElementById('priceChange'),
+        lastUpdate: document.getElementById('lastUpdate'),
+        signalCard: document.getElementById('signalCard'),
+        signalBadge: document.getElementById('signalBadge'),
+        signalReason: document.getElementById('signalReason'),
+        smaShort: document.getElementById('smaShort'),
+        smaLong: document.getElementById('smaLong'),
+        rsi: document.getElementById('rsiVal'),
+        entry: document.getElementById('entryPrice'),
+        tp: document.getElementById('tpPrice'),
+        sl: document.getElementById('slPrice'),
+        atr: document.getElementById('atrVal'),
+        momentum: document.getElementById('momentumVal'),
+        coverage: document.getElementById('dataCoverage'),
+        error: document.getElementById('errorMsg'),
+        canvas: document.getElementById('chartCanvas')
+    };
+
+    // ---------- Helpers ----------
+    function fmt(n, decimals = 2) {
+        if (n === null || n === undefined || isNaN(n)) return '--';
+        return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+
+    function setError(msg) {
+        el.error.textContent = msg || '';
+    }
+
+    // ---------- Fetch spot ----------
+    async function fetchSpot() {
+        try {
+            const res = await fetch(SPOT_URL, { cache: 'no-store' });
+            if (!res.ok) throw new Error('Spot HTTP ' + res.status);
+            const data = await res.json();
+            if (data && data.xau && typeof data.xau.price === 'number') {
+                prevPrice = currentPrice;
+                currentPrice = data.xau.price;
+                renderPrice();
+                lastSpotFetch = Date.now();
+                updateLastUpdate();
+                setError('');
+            } else {
+                setError('รูปแบบข้อมูล Spot ไม่ถูกต้อง');
+            }
+        } catch (e) {
+            console.warn('Spot fetch failed', e);
+            // Don't overwrite price if we already have one; just show error
+            if (currentPrice === null) setError('ไม่สามารถดึงราคา Spot ได้: ' + e.message);
+        }
+    }
+
+    // ---------- Fetch intraday ----------
+    async function fetchIntraday() {
+        try {
+            const res = await fetch(INTRADAY_URL, { cache: 'no-store' });
+            if (!res.ok) throw new Error('Intraday HTTP ' + res.status);
+            const data = await res.json();
+            if (data && Array.isArray(data.points) && data.points.length > 0) {
+                // Expect points: [{t, p}, ...]
+                intradayPoints = data.points
+                    .filter(pt => pt && typeof pt.t === 'number' && typeof pt.p === 'number')
+                    .sort((a, b) => a.t - b.t); // ascending by time
+                lastIntradayFetch = Date.now();
+                setError('');
+            } else {
+                setError('รูปแบบข้อมูล Intraday ไม่ถูกต้อง');
+            }
+        } catch (e) {
+            console.warn('Intraday fetch failed', e);
+            setError('ไม่สามารถดึงข้อมูล Intraday ได้: ' + e.message);
+        }
+    }
+
+    // ---------- Render price ----------
+    function renderPrice() {
+        if (currentPrice === null) return;
+        el.price.textContent = '$' + fmt(currentPrice, 2);
+
+        if (prevPrice !== null && prevPrice !== 0) {
+            const diff = currentPrice - prevPrice;
+            const pct = (diff / prevPrice) * 100;
+            const sign = diff >= 0 ? '+' : '';
+            el.change.textContent = `${sign}${fmt(diff, 2)} (${sign}${fmt(pct, 3)}%)`;
+            el.change.className = 'change ' + (diff >= 0 ? 'up' : 'down');
+        } else {
+            el.change.textContent = '--';
+            el.change.className = 'change';
+        }
+    }
+
+    function updateLastUpdate() {
+        const d = new Date();
+        el.lastUpdate.textContent = 'อัปเดต ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    // ---------- Indicators ----------
+    function computeSMA(points, period) {
+        if (points.length < period) return null;
+        const slice = points.slice(-period);
+        const sum = slice.reduce((acc, pt) => acc + pt.p, 0);
+        return sum / period;
+    }
+
+    function computeRSI(points, period = 14) {
+        if (points.length < period + 1) return null;
+        const prices = points.map(pt => pt.p);
+        let gains = 0, losses = 0;
+        for (let i = prices.length - period; i < prices.length; i++) {
+            const diff = prices[i] - prices[i - 1];
+            if (diff >= 0) gains += diff;
+            else losses += Math.abs(diff);
+        }
+        const avgGain = gains / period;
+        const avgLoss = losses / period;
+        if (avgLoss === 0) return 100;
+        const rs = avgGain / avgLoss;
+        return 100 - (100 / (1 + rs));
+    }
+
+    function computeATR(points, period = 14) {
+        if (points.length < period + 1) return null;
+        const trueRanges = [];
+        for (let i = 1; i < points.length; i++) {
+            const high = Math.max(points[i].p, points[i - 1].p);
+            const low = Math.min(points[i].p, points[i - 1].p);
+            trueRanges.push(high - low);
+        }
+        const recent = trueRanges.slice(-period);
+        return recent.reduce((a, b) => a + b, 0) / recent.length;
+    }
+
+    // ---------- Analysis ----------
+    function analyze() {
+        if (intradayPoints.length < 15) {
+            // Not enough data yet
+            resetAnalysisUI();
+            return;
+        }
+
+        const sma20 = computeSMA(intradayPoints, 10); // 10 points * 2 min = 20 min
+        const sma60 = computeSMA(intradayPoints, 30); // 30 points * 2 min = 60 min
+        const rsi = computeRSI(intradayPoints, 14);
+        const atr = computeATR(intradayPoints, 14);
+
+        // Update metrics
+        el.smaShort.textContent = sma20 !== null ? '$' + fmt(sma20, 2) : '--';
+        el.smaLong.textContent = sma60 !== null ? '$' + fmt(sma60, 2) : '--';
+        el.rsi.textContent = rsi !== null ? fmt(rsi, 1) : '--';
+        el.rsi.style.color = rsi > 70 ? 'var(--sell)' : (rsi < 30 ? 'var(--buy)' : 'var(--text)');
+
+        // Momentum: price change over last ~20 minutes (10 points)
+        let momentum = null;
+        if (intradayPoints.length >= 11) {
+            const past = intradayPoints[intradayPoints.length - 11].p;
+            const now = intradayPoints[intradayPoints.length - 1].p;
+            momentum = ((now - past) / past) * 100;
+            el.momentum.textContent = (momentum >= 0 ? '+' : '') + fmt(momentum, 2) + '%';
+            el.momentum.style.color = momentum >= 0 ? 'var(--buy)' : 'var(--sell)';
+        } else {
+            el.momentum.textContent = '--';
+        }
+
+        el.atr.textContent = atr !== null ? '$' + fmt(atr, 2) : '--';
+        el.coverage.textContent = intradayPoints.length * 2 + ' นาที';
+
+        // ---------- Signal Logic ----------
+        let signal = 'NEUTRAL';
+        let reason = '';
+
+        if (sma20 !== null && sma60 !== null && rsi !== null) {
+            if (sma20 > sma60 && rsi < 70) {
+                signal = 'BUY';
+                reason = 'SMA ระยะสั้นตัดขึ้น + RSI ยังไม่ overbought';
+            } else if (sma20 < sma60 && rsi > 30) {
+                signal = 'SELL';
+                reason = 'SMA ระยะสั้นตัดลง + RSI ยังไม่ oversold';
+            } else if (sma20 > sma60 && rsi >= 70) {
+                signal = 'NEUTRAL';
+                reason = 'แนวโน้มขึ้นแต่ RSI overbought เสี่ยงย่อ';
+            } else if (sma20 < sma60 && rsi <= 30) {
+                signal = 'NEUTRAL';
+                reason = 'แนวโน้มลงแต่ RSI oversold เสี่ยงเด้ง';
+            } else {
+                signal = 'NEUTRAL';
+                reason = 'SMA ยังไม่ชัดเจน / ตลาดไซด์เวย์';
+            }
+        } else {
+            reason = 'ข้อมูลไม่เพียงพอสำหรับคำนวณ';
+        }
+
+        // Update signal UI
+        el.signalBadge.textContent = signal;
+        el.signalBadge.className = 'signal-badge ' + signal.toLowerCase();
+        el.signalCard.className = 'card signal-card ' + signal.toLowerCase();
+        el.signalReason.textContent = reason;
+
+        // ---------- Levels ----------
+        if (currentPrice !== null) {
+            const entry = currentPrice;
+            let tp, sl;
+
+            // Use ATR if available, otherwise fixed percentage
+            if (atr !== null && atr > 0) {
+                const atrMultTP = 1.5;
+                const atrMultSL = 1.0;
+                if (signal === 'BUY') {
+                    tp = entry + atr * atrMultTP;
+                    sl = entry - atr * atrMultSL;
+                } else if (signal === 'SELL') {
+                    tp = entry - atr * atrMultTP;
+                    sl = entry + atr * atrMultSL;
+                } else {
+                    // Neutral: show symmetrical levels but muted
+                    tp = entry + atr * 1.0;
+                    sl = entry - atr * 1.0;
+                }
+            } else {
+                // Fallback fixed percentages
+                const tpPct = 0.005; // 0.5%
+                const slPct = 0.003; // 0.3%
+                if (signal === 'SELL') {
+                    tp = entry * (1 - tpPct);
+                    sl = entry * (1 + slPct);
+                } else {
+                    tp = entry * (1 + tpPct);
+                    sl = entry * (1 - slPct);
+                }
+            }
+
+            el.entry.textContent = '$' + fmt(entry, 2);
+            el.tp.textContent = '$' + fmt(tp, 2);
+            el.sl.textContent = '$' + fmt(sl, 2);
+        }
+
+        // Draw chart
+        drawChart(intradayPoints, sma20, sma60);
+    }
+
+    function resetAnalysisUI() {
+        el.smaShort.textContent = '--';
+        el.smaLong.textContent = '--';
+        el.rsi.textContent = '--';
+        el.atr.textContent = '--';
+        el.momentum.textContent = '--';
+        el.coverage.textContent = '--';
+        el.signalBadge.textContent = 'NEUTRAL';
+        el.signalBadge.className = 'signal-badge neutral';
+        el.signalCard.className = 'card signal-card neutral';
+        el.signalReason.textContent = 'กำลังรวบรวมข้อมูล...';
+        el.entry.textContent = '$' + fmt(currentPrice, 2);
+        el.tp.textContent = '--';
+        el.sl.textContent = '--';
+    }
+
+    // ---------- Chart ----------
+    function drawChart(points, smaShort, smaLong) {
+        const canvas = el.canvas;
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+        }
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+
+        if (points.length < 2) return;
+
+        const prices = points.map(p => p.p);
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        const range = max - min || 1;
+
+        const padX = 4;
+        const padY = 8;
+        const plotW = w - padX * 2;
+        const plotH = h - padY * 2;
+
+        const xFor = i => padX + (i / (points.length - 1)) * plotW;
+        const yFor = p => padY + (1 - (p - min) / range) * plotH;
+
+        // Grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+            const y = padY + (i / 4) * plotH;
+            ctx.beginPath();
+            ctx.moveTo(padX, y);
+            ctx.lineTo(w - padX, y);
+            ctx.stroke();
+        }
+
+        // Price line
+        ctx.beginPath();
+        ctx.strokeStyle = '#f5c542';
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
+        points.forEach((pt, i) => {
+            const x = xFor(i);
+            const y = yFor(pt.p);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Gradient fill
+        const gradient = ctx.createLinearGradient(0, padY, 0, h - padY);
+        gradient.addColorStop(0, 'rgba(245,197,66,0.15)');
+        gradient.addColorStop(1, 'rgba(245,197,66,0)');
+        ctx.lineTo(w - padX, h - padY);
+        ctx.lineTo(padX, h - padY);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // SMA lines (dashed)
+        if (smaShort !== null) {
+            drawHorizontal(ctx, w, padX, smaShort, yFor, '#00c853', [4,4]);
+        }
+        if (smaLong !== null) {
+            drawHorizontal(ctx, w, padX, smaLong, yFor, '#ff3d00', [4,4]);
+        }
+    }
+
+    function drawHorizontal(ctx, w, padX, value, yFor, color, dash) {
+        const y = yFor(value);
+        if (y < 0 || y > ctx.canvas.height) return;
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash(dash || []);
+        ctx.beginPath();
+        ctx.moveTo(padX, y);
+        ctx.lineTo(w - padX, y);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    // ---------- Main Loop ----------
+    async function tick() {
+        const now = Date.now();
+
+        // Spot every 5s
+        if (now - lastSpotFetch >= REFRESH_SPOT_MS) {
+            await fetchSpot();
+        }
+
+        // Intraday every 30s
+        if (now - lastIntradayFetch >= REFRESH_INTRADAY_MS || lastIntradayFetch === 0) {
+            await fetchIntraday();
+        }
+
+        // Analyze whenever we have both price and points
+        if (currentPrice !== null && intradayPoints.length > 0) {
+            analyze();
+        } else if (currentPrice !== null) {
+            el.entry.textContent = '$' + fmt(currentPrice, 2);
+        }
+    }
+
+    // Initial fetch then interval
+    (async function init() {
+        await fetchSpot();
+        await fetchIntraday();
+        if (currentPrice !== null && intradayPoints.length > 0) analyze();
+        else if (currentPrice !== null) el.entry.textContent = '$' + fmt(currentPrice, 2);
+        setInterval(tick, 3000);
+        window.addEventListener('resize', () => {
+            if (intradayPoints.length > 1) analyze();
+        });
+    })();
+
+})();
+</script>
+</body>
+</html>
