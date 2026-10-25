@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏆 XAUUSD Gold Realtime Analyzer</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Prompt', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1410 50%, #0a0a0a 100%);
+    color: #e8d9a0;
+    min-height: 100vh;
+    padding: 15px;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+  header {
+    background: linear-gradient(90deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05));
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  .logo { font-size: 26px; font-weight: bold; color: #d4af37; text-shadow: 0 0 15px rgba(212,175,55,0.5); }
+  .logo span { font-size: 14px; color: #8a7a4a; font-weight: normal; display: block; }
+  .status { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #ff3b3b; animation: pulse 1.5s infinite; }
+  .dot.live { background: #00ff88; box-shadow: 0 0 10px #00ff88; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  .price-hero {
+    background: linear-gradient(135deg, rgba(212,175,55,0.1), rgba(0,0,0,0.5));
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+  }
+  .price-box { text-align: center; }
+  .price-label { font-size: 11px; color: #8a7a4a; text-transform: uppercase; letter-spacing: 1px; }
+  .price-value { font-size: 28px; font-weight: bold; color: #d4af37; margin-top: 5px; font-family: 'Consolas', monospace; }
+  .price-value.up { color: #00ff88; }
+  .price-value.down { color: #ff4757; }
+  .price-sub { font-size: 12px; margin-top: 3px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: linear-gradient(135deg, rgba(30,25,15,0.9), rgba(15,12,8,0.9));
+    border: 1px solid rgba(212,175,55,0.25);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .card-title {
+    font-size: 14px;
+    color: #d4af37;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(212,175,55,0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .chart-wrap { position: relative; height: 350px; }
+
+  .signal-card { text-align: center; padding: 25px 18px; }
+  .signal-badge {
+    display: inline-block;
+    padding: 12px 40px;
+    border-radius: 8px;
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin: 10px 0;
+    text-transform: uppercase;
+    animation: glow 2s infinite;
+  }
+  .signal-badge.buy { background: linear-gradient(135deg, #00c853, #007a33); color: white; box-shadow: 0 0 25px rgba(0,200,83,0.5); }
+  .signal-badge.sell { background: linear-gradient(135deg, #ff1744, #8b0000); color: white; box-shadow: 0 0 25px rgba(255,23,68,0.5); }
+  .signal-badge.hold { background: linear-gradient(135deg, #ffa000, #8b6500); color: white; box-shadow: 0 0 25px rgba(255,160,0,0.5); }
+  @keyframes glow { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.2); } }
+
+  .levels { margin-top: 15px; }
+  .level-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    margin: 5px 0;
+    border-radius: 6px;
+    font-family:
