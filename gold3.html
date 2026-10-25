@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XAUUSD Realtime Analyzer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.1/echarts.min.js"></script>
+<style>
+:root{--bg:#10120f;--card:#181b16;--line:#2a2f26;--tx:#ece8dc;--mut:#8f9484;--gold:#d9b24c;--up:#4cc38a;--dn:#e5605a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 "Sarabun","Segoe UI",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:14px 20px;border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:16px;font-weight:600;color:var(--gold)}
+#price{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
+#chg{font-size:14px}
+.sp{flex:1}
+select{background:var(--card);color:var(--tx);border:1px solid var(--line);padding:6px 10px;border-radius:6px;font:inherit}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--up);margin-right:6px}
+.dot.off{background:var(--dn)}
+.mut{color:var(--mut);font-size:12px}
+main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px;padding:14px 20px}
+#chart{height:760px;background:var(--card);border:1px solid var(--line);border-radius:8px}
+aside{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.card h3{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--gold)}
+.sig{font-size:30px;font-weight:700;letter-spacing:1px}
+.row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--line);font-variant-numeric:tabular-nums}
+.row:last-child{border:0}
+.up{color:var(--up)}.dn{color:var(--dn)}.n{color:var(--mut)}
+.bar{height:6px;background:var(--dn);border-radius:3px;overflow:hidden;margin:6px 0}
+.bar i{display:block;height:100%;background:var(--up)}
+ul{margin:0;padding-left:16px}li{margin:2px 0}
+footer{padding:0 20px 24px;color:var(--mut);font-size:12px}
+@media(max-width:980px){main{grid-template-columns:1fr;padding:10px}#chart{height:640px}header{padding:12px}}
+</style></head><body>
+<header>
+ <h1>XAUUSD · วิเคราะห์ทองคำ Realtime</h1>
+ <div id="price">-</div><div id="chg"></div>
+ <div class="sp"></div>
+ <div class="mut"><span id="dot" class="dot"></span><span id="st">กำลังเชื่อมต่อ...</span></div>
+ <select id="tf"><option value="1m">1 นาที</option><option value="5m">5 นาที</option><option value="15m">15 นาที</option></select>
+</header>
+<main>
+ <div id="chart"></div>
+ <aside id="panel"></aside>
+</main>
+<footer>ข้อมูลจาก Binance (XAUUSDT Futures → PAXGUSDT Spot) และ Yahoo Finance (GC=F) อัปเดตทุก 5 วินาที · ผลวิเคราะห์เป็นการคำนวณจาก indicator ไม่ใช่คำแนะนำการลงทุน ผู้ใช้ต้องรับความเสี่ยงเอง</footer>
+<script>
+const $=id=>document.getElementById(id);
+const f=(x,d=2)=>x==null||isNaN(x)?'-':(+x).toFixed(d);
+const IV={'1m':60,'5m':300,'15m':900};
+const binance=r=>r.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}));
+const yahoo=j=>{const r=j.chart.result[0],q=r.indicators.quote[0],o=[];r.timestamp.forEach((t,i)=>{if(q.close[i]!=null&&q.open[i]!=null)o.push({t:t*1000,o:q.open[i],h:q.high[i],l:q.low[i],c:q.close[i]})});return o.slice(-500)};
+const SRC=[
+ {n:'Binance Futures XAUUSDT',u:i=>`https://fapi.binance.com/fapi/v1/klines?symbol=XAUUSDT&interval=${i}&limit=500`,p:binance},
+ {n:'Binance Spot PAXGUSDT (โทเคนทองคำ)',u:i=>`https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=${i}&limit=500`,p:binance},
+ {n:'Yahoo Finance GC=F (ทองคำล่วงหน้า)',u:i=>'https://api.allorigins.win/raw?url='+encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=${i}&range=${i=='1m'?'1d':'5d'}`),p:yahoo}
+];
+let si=0,tf='1m',chart,busy=false,inited=false;
+
+/* ---------- indicators ---------- */
+const sma=(a,n)=>a.map((_,i)=>i<n-1?null:a.slice(i-n+1,i+1).reduce((x,y)=>x+y,0)/n);
+const ema=(a,n)=>{const k=2/(n+1);let p=0;return a.map((v,i)=>p=i?v*k+p*(1-k):v)};
+function rsi(c,n=14){const o=Array(c.length).fill(null);let g=0,l=0;for(let i=1;i<c.length;i++){const d=c[i]-c[i-1],u=Math.max(d,0),v=Math.max(-d,0);if(i<=n){g+=u;l+=v;if(i===n){g/=n;l/=n;o[i]=100-100/(1+g/(l||1e-9))}}else{g=(g*(n-1)+u)/n;l=(l*(n-1)+v)/n;o[i]=100-100/(1+g/(l||1e-9))}}return o}
+function bb(c,n=20,m=2){const mid=sma(c,n),up=[],lo=[];c.forEach((_,i)=>{if(i<n-1){up.push(null);lo.push(null);return}const s=c.slice(i-n+1,i+1),mu=mid[i],sd=Math.sqrt(s.reduce((x,y)=>x+(y-mu)**2,0)/n);up.push(mu+m*sd);lo.push(mu-m*sd)});return{mid,up,lo}}
+function atr(d,n=14){const tr=d.map((x,i)=>i?Math.max(x.h-x.l,Math.abs(x.h-d[i-1].c),Math.abs(x.l-d[i-1].c)):x.h-x.l);let a=tr.slice(0,n).reduce((x,y)=>x+y,0)/n;for(let i=n;i<tr.length;i++)a=(a*(n-1)+tr[i])/n;return a}
+function slope(a){const n=a.length,mx=(n-1)/2,my=a.reduce((x,y)=>x+y,0)/n;let nu=0,de=0;a.forEach((y,i)=>{nu+=(i-mx)*(y-my);de+=(i-mx)**2});return nu/de}
+
+/* ---------- support / resistance ---------- */
+function levels(d,price,A){
+ const w=5,pts=[],s=d.slice(-250),tol=A*0.5;
+ for(let i=w;i<s.length-w;i++){const win=s.slice(i-w,i+w+1);
+  if(s[i].h===Math.max(...win.map(x=>x.h)))pts.push(s[i].h);
+  if(s[i].l===Math.min(...win.map(x=>x.l)))pts.push(s[i].l)}
+ pts.sort((a,b)=>a-b);const cl=[];
+ pts.forEach(p=>{const g=cl[cl.length-1];if(g&&p-g.v<=tol){g.v=(g.v*g.n+p)/(g.n+1);g.n++}else cl.push({v:p,n:1})});
+ const sup=cl.filter(x=>x.v<price-A*0.2).sort((a,b)=>b.v-a.v).slice(0,3).map(x=>x.v);
+ const res=cl.filter(x=>x.v>price+A*0.2).sort((a,b)=>a.v-b.v).slice(0,3).map(x=>x.v);
+ return{sup,res}
+}
+
+/* ---------- analysis ---------- */
+function analyze(d,I){
+ const n=d.length,i=n-1,c=d.map(x=>x.c),price=c[i],A=atr(d),why=[];let sc=0;
+ const a5=I.m5[i],a15=I.m15[i],a30=I.m30[i],a60=I.m1h[i];
+ if(a5>a15&&a15>a30){sc+=2;why.push(['up','MA5 > MA15 > MA30 เรียงตัวขาขึ้น'])}
+ else if(a5<a15&&a15<a30){sc-=2;why.push(['dn','MA5 < MA15 < MA30 เรียงตัวขาลง'])}
+ else why.push(['n','เส้น MA ยังพันกัน ทิศทางไม่ชัด']);
+ if(a60!=null){if(price>a60){sc+=1;why.push(['up','ราคาอยู่เหนือ MA1h'])}else{sc-=1;why.push(['dn','ราคาอยู่ใต้ MA1h'])}}
+ const r=I.rsi[i];
+ if(r<30){sc+=1.5;why.push(['up',`RSI ${f(r,1)} Oversold โอกาสเด้งขึ้น`])}
+ else if(r>70){sc-=1.5;why.push(['dn',`RSI ${f(r,1)} Overbought โอกาสย่อตัว`])}
+ else{sc+=(r-50)/25;why.push(['n',`RSI ${f(r,1)} อยู่โซนกลาง`])}
+ const h=I.hist[i],hp=I.hist[i-1];
+ if(h>0){sc+=h>hp?1.5:0.5;why.push(['up',`MACD Histogram บวก${h>hp?' และกำลังขยาย':' แต่เริ่มแผ่ว'}`])}
+ else{sc-=h<hp?1.5:0.5;why.push(['dn',`MACD Histogram ลบ${h<hp?' และกำลังขยาย':' แต่เริ่มแผ่ว'}`])}
+ if(price<I.bb.lo[i]){sc+=1;why.push(['up','ราคาหลุด Bollinger ล่าง มีแรงเด้งกลับ'])}
+ else if(price>I.bb.up[i]){sc-=1;why.push(['dn','ราคาทะลุ Bollinger บน มีแรงตีกลับ'])}
+ else why.push(['n','ราคาอยู่ในกรอบ Bollinger']);
+ const L=levels(d,price,A),S1=L.sup[0],R1=L.res[0],R2=L.res[1],S2=L.sup[1];
+ const dir=sc>=1.5?'BUY':sc<=-1.5?'SELL':'WAIT';
+ let plan=null;
+ if(dir==='BUY'){let sl=price-1.5*A;if(S1&&price-S1>0.5*A&&price-S1<2.5*A)sl=S1-0.2*A;
+  const tp1=R1&&R1-price>=A?R1:price+1.5*A,tp2=R2&&R2>tp1+0.5*A?R2:price+3*A;plan={sl,tp1,tp2}}
+ if(dir==='SELL'){let sl=price+1.5*A;if(R1&&R1-price>0.5*A&&R1-price<2.5*A)sl=R1+0.2*A;
+  const tp1=S1&&price-S1>=A?S1:price-1.5*A,tp2=S2&&S2<tp1-0.5*A?S2:price-3*A;plan={sl,tp1,tp2}}
+ if(plan)plan.rr=Math.abs(plan.tp1-price)/Math.abs(price-plan.sl);
+ const ba=3600/IV[tf],sg=A*Math.sqrt(ba);
+ const proj=Math.max(-sg,Math.min(sg,0.5*slope(c.slice(-30))*ba));
+ const exp=price+proj+sc*0.15*sg,pUp=1/(1+Math.exp(-sc*0.6));
+ return{price,A,sc,why,dir,plan,sup:L.sup,res:L.res,exp,lo:exp-sg,hi:exp+sg,pUp}
+}
+
+/* ---------- render ---------- */
+function render(d,s){
+ const c=d.map(x=>x.c),n=d.length,p1h=Math.round(3600/IV[tf]);
+ const e12=ema(c,12),e26=ema(c,26),macd=c.map((_,i)=>e12[i]-e26[i]),sig=ema(macd,9),hist=macd.map((v,i)=>v-sig[i]);
+ const I={m5:sma(c,5),m15:sma(c,15),m30:sma(c,30),m1h:sma(c,p1h),rsi:rsi(c),bb:bb(c),macd,sig,hist};
+ const a=analyze(d,I),last=d[n-1],prev=d[n-2],ch=last.c-prev.c;
+ $('price').textContent=f(last.c);$('price').className=ch>=0?'up':'dn';
+ $('chg').innerHTML=`<span class="${ch>=0?'up':'dn'}">${ch>=0?'▲':'▼'} ${f(Math.abs(ch))}</span>`;
+ $('dot').className='dot';$('st').textContent=`${s.n} · อัปเดต ${new Date().toLocaleTimeString('th-TH')}`;
+ const cls=a.dir==='BUY'?'up':a.dir==='SELL'?'dn':'n',lbl={BUY:'BUY ซื้อ',SELL:'SELL ขาย',WAIT:'WAIT รอดูสัญญาณ'}[a.dir];
+ const trend=a.exp>last.c+a.A*0.3?['ขาขึ้น','up']:a.exp<last.c-a.A*0.3?['ขาลง','dn']:['ไซด์เวย์','n'];
+ const R=(k,v,c='')=>`<div class="row"><span class="mut">${k}</span><b class="${c}">${v}</b></div>`;
+ let planH='';
+ if(a.plan){const p=a.plan;planH=R('จุดเข้า (Entry)',f(a.price))+R('ตัดขาดทุน (SL)',f(p.sl),'dn')+R('ทำกำไร TP1',f(p.tp1),'up')+R('ทำกำไร TP2',f(p.tp2),'up')+R('Risk : Reward (TP1)','1 : '+f(p.rr,1))}
+ else planH=R('รอ Buy ใกล้แนวรับ',f(a.sup[0]),'up')+R('รอ Sell ใกล้แนวต้าน',f(a.res[0]),'dn')+`<div class="mut" style="margin-top:6px">คะแนนยังไม่ถึงเกณฑ์เข้าเทรด</div>`;
+ const i=n-1;
+ $('panel').innerHTML=`
+ <div class="card"><h3>สัญญาณปัจจุบัน (${tf})</h3><div class="sig ${cls}">${lbl}</div><div class="mut">คะแนนรวม ${f(a.sc,1)} (−8 ถึง +8)</div></div>
+ <div class="card"><h3>แนวโน้มราคาอีก 1 ชั่วโมงข้างหน้า</h3>
+  ${R('ทิศทางที่คาด',trend[0],trend[1])}${R('ราคาคาดการณ์',f(a.exp))}${R('ช่วงที่เป็นไปได้',f(a.lo)+' – '+f(a.hi))}
+  <div class="mut" style="margin-top:6px">โอกาสขึ้น ${f(a.pUp*100,0)}% · ลง ${f(100-a.pUp*100,0)}%</div><div class="bar"><i style="width:${a.pUp*100}%"></i></div></div>
+ <div class="card"><h3>แผนเทรด</h3>${planH}</div>
+ <div class="card"><h3>แนวรับ / แนวต้าน</h3>
+  ${a.res.slice().reverse().map((v,k,r)=>R('แนวต้าน R'+(r.length-k),f(v),'dn')).join('')}${R('ราคาปัจจุบัน',f(a.price))}${a.sup.map((v,k)=>R('แนวรับ S'+(k+1),f(v),'up')).join('')}</div>
+ <div class="card"><h3>ค่า Indicator</h3>
+  ${R('MA5',f(I.m5[i]))}${R('MA15',f(I.m15[i]))}${R('MA30',f(I.m30[i]))}${R('MA1h ('+p1h+' แท่ง)',f(I.m1h[i]))}
+  ${R('Bollinger บน / ล่าง',f(I.bb.up[i])+' / '+f(I.bb.lo[i]))}${R('RSI(14)',f(I.rsi[i],1))}${R('MACD / Signal',f(macd[i],2)+' / '+f(sig[i],2))}${R('ATR(14)',f(a.A))}</div>
+ <div class="card"><h3>เหตุผลของสัญญาณ</h3><ul>${a.why.map(w=>`<li class="${w[0]}">${w[1]}</li>`).join('')}</ul></div>`;
+ draw(d,I,a);
+}
+
+function draw(d,I,a){
+ const n=d.length,x=d.map(k=>new Date(k.t).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',hour12:false}));
+ const ln=(name,data,color,w=1.2,t='solid',gi=0)=>({name,type:'line',data,xAxisIndex:gi,yAxisIndex:gi,showSymbol:false,smooth:false,lineStyle:{width:w,color,type:t},itemStyle:{color}});
+ const ml=[];
+ a.res.forEach((v,k)=>ml.push({yAxis:v,lineStyle:{color:'#e5605a',type:'dashed',opacity:.7},label:{formatter:'R'+(k+1)+' '+f(v),color:'#e5605a'}}));
+ a.sup.forEach((v,k)=>ml.push({yAxis:v,lineStyle:{color:'#4cc38a',type:'dashed',opacity:.7},label:{formatter:'S'+(k+1)+' '+f(v),color:'#4cc38a'}}));
+ if(a.plan){[['Entry',a.price,'#ece8dc'],['SL',a.plan.sl,'#ff8a80'],['TP1',a.plan.tp1,'#9be7b8'],['TP2',a.plan.tp2,'#9be7b8']].forEach(p=>ml.push({yAxis:p[1],lineStyle:{color:p[2],type:'solid',width:1.4},label:{formatter:p[0]+' '+f(p[1]),color:p[2],position:'insideStartTop'}}))}
+ const ax=(g,show)=>({type:'category',data:x,gridIndex:g,axisLabel:{show,color:'#8f9484'},axisLine:{lineStyle:{color:'#2a2f26'}},axisTick:{show:false}});
+ const ay=(g,o={})=>Object.assign({gridIndex:g,scale:true,splitLine:{lineStyle:{color:'#20241c'}},axisLabel:{color:'#8f9484'},position:'right'},o);
+ const opt={animation:false,backgroundColor:'transparent',
+  legend:{top:4,textStyle:{color:'#8f9484'},data:['MA5','MA15','MA30','MA1h','BB บน','BB ล่าง']},
+  tooltip:{trigger:'axis',axisPointer:{type:'cross'}},
+  axisPointer:{link:[{xAxisIndex:'all'}]},
+  grid:[{left:10,right:70,top:36,height:'50%'},{left:10,right:70,top:'64%',height:'12%'},{left:10,right:70,top:'81%',height:'12%'}],
+  xAxis:[ax(0,false),ax(1,false),ax(2,true)],
+  yAxis:[ay(0),ay(1,{min:0,max:100,splitNumber:2}),ay(2)],
+  series:[
+   {name:'ราคา',type:'candlestick',data:d.map(k=>[k.o,k.c,k.l,k.h]),itemStyle:{color:'#4cc38a',color0:'#e5605a',borderColor:'#4cc38a',borderColor0:'#e5605a'},
+    markLine:{symbol:'none',silent:true,data:ml,label:{position:'insideEndTop'}}},
+   ln('MA5',I.m5,'#f5d76e'),ln('MA15',I.m15,'#5dade2'),ln('MA30',I.m30,'#c39bd3'),ln('MA1h',I.m1h,'#ffffff',1.6),
+   ln('BB บน',I.bb.up,'#d9b24c',1,'dashed'),ln('BB ล่าง',I.bb.lo,'#d9b24c',1,'dashed'),
+   Object.assign(ln('BB กลาง',I.bb.mid,'#6b6f5e',1,'dotted'),{}),
+   Object.assign(ln('RSI',I.rsi,'#d9b24c',1.4,'solid',1),{markLine:{symbol:'none',silent:true,label:{show:false},lineStyle:{color:'#555',type:'dashed'},data:[{yAxis:30},{yAxis:70}]}}),
+   {name:'Hist',type:'bar',xAxisIndex:2,yAxisIndex:2,data:I.hist.map(v=>({value:v,itemStyle:{color:v>=0?'#4cc38a':'#e5605a'}}))},
+   ln('MACD',I.macd,'#5dade2',1.2,'solid',2),ln('Signal',I.sig,'#f5a35d',1.2,'solid',2)
+  ]};
+ if(!inited){opt.dataZoom=[{type:'inside',xAxisIndex:[0,1,2],start:Math.max(0,100-120/n*100),end:100}];inited=true}
+ chart.setOption(opt,{replaceMerge:['series']});
+}
+
+/* ---------- data loop ---------- */
+async function load(){
+ if(busy)return;busy=true;
+ for(let k=0;k<SRC.length;k++){const j=(si+k)%SRC.length,s=SRC[j];
+  try{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),6000);
+   const r=await fetch(s.u(tf),{signal:ac.signal});clearTimeout(to);
+   if(!r.ok)throw 0;const d=s.p(await r.json());if(d.length<60)throw 0;
+   si=j;render(d,s);busy=false;return}catch(e){}
+ }
+ busy=false;$('dot').className='dot off';$('st').textContent='เชื่อมต่อแหล่งข้อมูลไม่ได้ กำลังลองใหม่...';
+}
+chart=echarts.init($('chart'),null,{renderer:'canvas'});
+addEventListener('resize',()=>chart.resize());
+$('tf').onchange=e=>{tf=e.target.value;inited=false;load()};
+load();setInterval(load,5000);
+</script></body></html>
