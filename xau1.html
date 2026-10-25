@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏆 XAUUSD Gold Realtime Analyzer</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Prompt', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1410 50%, #0a0a0a 100%);
+    color: #e8d9a0;
+    min-height: 100vh;
+    padding: 15px;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+  header {
+    background: linear-gradient(90deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05));
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  .logo { font-size: 26px; font-weight: bold; color: #d4af37; text-shadow: 0 0 15px rgba(212,175,55,0.5); }
+  .logo span { font-size: 14px; color: #8a7a4a; font-weight: normal; display: block; }
+  .status { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #ff3b3b; animation: pulse 1.5s infinite; }
+  .dot.live { background: #00ff88; box-shadow: 0 0 10px #00ff88; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  .price-hero {
+    background: linear-gradient(135deg, rgba(212,175,55,0.1), rgba(0,0,0,0.5));
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+  }
+  .price-box { text-align: center; }
+  .price-label { font-size: 11px; color: #8a7a4a; text-transform: uppercase; letter-spacing: 1px; }
+  .price-value { font-size: 28px; font-weight: bold; color: #d4af37; margin-top: 5px; font-family: 'Consolas', monospace; }
+  .price-value.up { color: #00ff88; }
+  .price-value.down { color: #ff4757; }
+  .price-sub { font-size: 12px; margin-top: 3px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: linear-gradient(135deg, rgba(30,25,15,0.9), rgba(15,12,8,0.9));
+    border: 1px solid rgba(212,175,55,0.25);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .card-title {
+    font-size: 14px;
+    color: #d4af37;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(212,175,55,0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .chart-wrap { position: relative; height: 350px; }
+
+  .signal-card {
+    text-align: center;
+    padding: 25px 18px;
+  }
+  .signal-badge {
+    display: inline-block;
+    padding: 12px 40px;
+    border-radius: 8px;
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin: 10px 0;
+    text-transform: uppercase;
+    animation: glow 2s infinite;
+  }
+  .signal-badge.buy { background: linear-gradient(135deg, #00c853, #007a33); color: white; box-shadow: 0 0 25px rgba(0,200,83,0.5); }
+  .signal-badge.sell { background: linear-gradient(135deg, #ff1744, #8b0000); color: white; box-shadow: 0 0 25px rgba(255,23,68,0.5); }
+  .signal-badge.hold { background: linear-gradient(135deg, #ffa000, #8b6500); color: white; box-shadow: 0 0 25px rgba(255,160,0,0.5); }
+  @keyframes glow { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.2); } }
+
+  .levels { margin-top: 15px; }
+  .level-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    margin: 5px 0;
+    border-radius: 6px;
+    font-family: 'Consolas', monospace;
+    font-size: 14px;
+  }
+  .level-row.tp1 { background: rgba(0,200,83,0.15); border-left: 3px solid #00c853; }
+  .level-row.tp2 { background: rgba(0,200,83,0.25); border-left: 3px solid #00c853; }
+  .level-row.tp3 { background: rgba(0,200,83,0.35); border-left: 3px solid #00c853; }
+  .level-row.entry { background: rgba(212,175,55,0.15); border-left: 3px solid #d4af37; }
+  .level-row.sl { background: rgba(255,23,68,0.15); border-left: 3px solid #ff1744; }
+  .level-name { font-weight: bold; }
+  .level-price { color: #fff; }
+
+  .indicators {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .ind-box {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+  .ind-name { font-size: 10px; color: #8a7a4a; text-transform: uppercase; letter-spacing: 1px; }
+  .ind-value { font-size: 18px; font-weight: bold; margin: 5px 0; font-family: 'Consolas', monospace; }
+  .ind-signal { font-size: 11px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+  .bullish { background: rgba(0,200,83,0.2); color: #00ff88; }
+  .bearish { background: rgba(255,23,68,0.2); color: #ff4757; }
+  .neutral { background: rgba(255,160,0,0.2); color: #ffa000; }
+
+  .prediction {
+    background: linear-gradient(135deg, rgba(212,175,55,0.08), rgba(0,0,0,0.4));
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 12px;
+    padding: 18px;
+    margin-top: 15px;
+  }
+  .pred-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 12px;
+  }
+  .pred-item { text-align: center; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; }
+  .pred-label { font-size: 11px; color: #8a7a4a; text-transform: uppercase; }
+  .pred-value { font-size: 22px; font-weight: bold; margin-top: 5px; font-family: 'Consolas', monospace; }
+  .pred-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+  .pred-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff4757, #ffa000, #00ff88);
+    border-radius: 4px;
+    transition: width 0.5s;
+  }
+
+  .strength-meter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .meter-bar {
+    flex: 1;
+    height: 12px;
+    background: linear-gradient(90deg, #ff1744, #ffa000, #00c853);
+    border-radius: 6px;
+    position: relative;
+  }
+  .meter-pointer {
+    position: absolute;
+    top: -4px;
+    width: 4px;
+    height: 20px;
+    background: white;
+    border-radius: 2px;
+    transition: left 0.5s;
+    box-shadow: 0 0 8px white;
+  }
+
+  .footer-note {
+    text-align: center;
+    font-size: 11px;
+    color: #6a5a3a;
+    margin-top: 15px;
+    padding: 10px;
+  }
+  .blink { animation: blink 1s infinite; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">🏆 XAUUSD GOLD ANALYZER<span>Realtime Technical Analysis • PAXG/USDT</span></div>
+    <div class="status">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">กำลังเชื่อมต่อ...</span>
+      <span style="margin-left:10px;color:#6a5a3a;" id="clock"></span>
+    </div>
+  </header>
+
+  <div class="price-hero">
+    <div class="price-box">
+      <div class="price-label">ราคาปัจจุบัน (USD/oz)</div>
+      <div class="price-value" id="currentPrice">---.--</div>
+      <div class="price-sub" id="priceTime">--:--:--</div>
+    </div>
+    <div class="price-box">
+      <div class="price-label">เปลี่ยนแปลง 24 ชม.</div>
+      <div class="price-value" id="change24h">--.--</div>
+      <div class="price-sub" id="changePct">--%</div>
+    </div>
+    <div class="price-box">
+      <div class="price-label">สูงสุด 24 ชม.</div>
+      <div class="price-value" id="high24h">---.--</div>
+    </div>
+    <div class="price-box">
+      <div class="price-label">ต่ำสุด 24 ชม.</div>
+      <div class="price-value" id="low24h">---.--</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">📈 กราฟราคาแบบ Realtime <span style="font-size:11px;color:#8a7a4a;">PAXG/USDT ≈ XAUUSD</span></div>
+      <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
+    </div>
+
+    <div class="card signal-card">
+      <div class="card-title">🎯 สัญญาณเทรด</div>
+      <div id="signalBadge" class="signal-badge hold">WAIT</div>
+      <div style="font-size:12px;color:#8a7a4a;margin-top:5px;" id="signalConfidence">ความเชื่อมั่น: --%</div>
+
+      <div class="levels" id="levelsPanel">
+        <div class="level-row tp3"><span class="level-name">🎯 TP3</span><span class="level-price" id="tp3">---.--</span></div>
+        <div class="level-row tp2"><span class="level-name">🎯 TP2</span><span class="level-price" id="tp2">---.--</span></div>
+        <div class="level-row tp1"><span class="level-name">🎯 TP1</span><span class="level-price" id="tp1">---.--</span></div>
+        <div class="level-row entry"><span class="level-name">💰 ENTRY</span><span class="level-price" id="entry">---.--</span></div>
+        <div class="level-row sl"><span class="level-name">🛑 STOP LOSS</span><span class="level-price" id="sl">---.--</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:15px;">
+    <div class="card-title">📊 Technical Indicators</div>
+    <div class="indicators">
+      <div class="ind-box">
+        <div class="ind-name">RSI (14)</div>
+        <div class="ind-value" id="rsiVal">--</div>
+        <div class="ind-signal neutral" id="rsiSig">--</div>
+      </div>
+      <div class="ind-box">
+        <div class="ind-name">MACD</div>
+        <div class="ind-value" id="macdVal">--</div>
+        <div class="ind-signal neutral" id="macdSig">--</div>
+      </div>
+      <div class="ind-box">
+        <div class="ind-name">EMA 5/13</div>
+        <div class="ind-value" id="ema5Val">--</div>
+        <div class="ind-signal neutral" id="ema5Sig">--</div>
+      </div>
+      <div class="ind-box">
+        <div class="ind-name">EMA 21</div>
+        <div class="ind-value" id="ema21Val">--</div>
+        <div class="ind-signal neutral" id="ema21Sig">--</div>
+      </div>
+      <div class="ind-box">
+        <div class="ind-name">Bollinger %B</div>
+        <div class="ind-value" id="bbVal">--</div>
+        <div class="ind-signal neutral" id="bbSig">--</div>
+      </div>
+      <div class="ind-box">
+        <div class="ind-name">ATR (14)</div>
+        <div class="ind-value" id="atrVal">--</div>
+        <div class="ind-signal neutral" id="atrSig">Volatility</div>
+      </div>
+    </div>
+
+    <div class="strength-meter" style="margin-top:18px;">
+      <span style="font-size:11px;color:#ff4757;">BEARISH</span>
+      <div class="meter-bar"><div class="meter-pointer" id="meterPointer" style="left:50%;"></div></div>
+      <span style="font-size:11px;color:#00ff88;">BULLISH</span>
+    </div>
+    <div style="text-align:center;font-size:12px;color:#8a7a4a;margin-top:5px;">
+      Overall Market Strength: <span id="strengthText" style="color:#d4af37;font-weight:bold;">--</span>
+    </div>
+  </div>
+
+  <div class="prediction">
+    <div class="card-title">🔮 การคาดการณ์ราคาในอีก 1 ชั่วโมงข้างหน้า</div>
+    <div class="pred-grid">
+      <div class="pred-item">
+        <div class="pred-label">ราคาคาดการณ์ (1H)</div>
+        <div class="pred-value" id="predPrice" style="color:#d4af37;">---.--</div>
+      </div>
+      <div class="pred-item">
+        <div class="pred-label">ช่วงราคาที่เป็นไปได้</div>
+        <div class="pred-value" id="predRange" style="font-size:16px;">---.-- ~ ---.--</div>
+      </div>
+      <div class="pred-item">
+        <div class="pred-label">แนวโน้ม</div>
+        <div class="pred-value" id="predTrend">--</div>
+      </div>
+      <div class="pred-item">
+        <div class="pred-label">ความเชื่อมั่น</div>
+        <div class="pred-value" id="predConf">--%</div>
+        <div class="pred-bar"><div class="pred-bar-fill" id="predBar" style="width:50%;"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    ⚠️ ข้อมูลอ้างอิงจาก PAXG/USDT (PAX Gold) บน Binance ซึ่งเป็นโทเคนอ้างอิงราคาทองคำ 1 ออนซ์ ราคาอาจแตกต่างจาก XAUUSD เล็กน้อย (±0.1-0.3%)<br>
+    ⚠️ การวิเคราะห์นี้เป็นเพียงเครื่องมือช่วยตัดสินใจ ไม่ใช่คำแนะนำการลงทุน การเทรดมีความเสี่ยงสูง<br>
+    📊 อัปเดตข้อมูล: Realtime ผ่าน Binance WebSocket | Technical Analysis: EMA, RSI, MACD, Bollinger Bands, Linear Regression
+  </div>
+</div>
+
+<script>
+// ============ CONFIG ============
+const SYMBOL = 'PAXGUSDT';
+const WS_URL = `wss://stream.binance.com:9443/ws/${SYMBOL.toLowerCase()}@kline_1m`;
+const REST_URL = `https://api.binance.com/api/v3/klines?symbol=${SYMBOL}&interval=1m&limit=500`;
+const TICKER_URL = `https://api.binance.com/api/v3/ticker/24hr?symbol=${SYMBOL}`;
+
+// ============ STATE ============
+let candles = []; // {time, open, high, low, close, volume}
+let currentCandle = null;
+let ws = null;
+let chart = null;
+
+// ============ INIT ============
+async function init() {
+  await loadHistory();
+  await load24hTicker();
+  setupChart();
+  connectWebSocket();
+  setInterval(updateClock, 1000);
+  setInterval(analyze, 3000);
+  updateClock();
+  analyze();
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('th-TH');
+}
+
+// ============ DATA LOADING ============
+async function loadHistory() {
+  try {
+    const res = await fetch(REST_URL);
+    const data = await res.json();
+    candles = data.map(k => ({
+      time: k[0],
+      open: parseFloat(k[1]),
+      high: parseFloat(k[2]),
+      low: parseFloat(k[3]),
+      close: parseFloat(k[4]),
+      volume: parseFloat(k[5])
+    }));
+    console.log(`Loaded ${candles.length} historical candles`);
+  } catch (e) {
+    console.error('Failed to load history:', e);
+  }
+}
+
+async function load24hTicker() {
+  try {
+    const res = await fetch(TICKER_URL);
+    const d = await res.json();
+    const change = parseFloat(d.priceChange);
+    const changePct = parseFloat(d.priceChangePercent);
+    const high = parseFloat(d.highPrice);
+    const low = parseFloat(d.lowPrice);
+
+    const changeEl = document.getElementById('change24h');
+    changeEl.textContent = (change >= 0 ? '+' : '') + change.toFixed(2);
+    changeEl.className = 'price-value ' + (change >= 0 ? 'up' : 'down');
+
+    const pctEl = document.getElementById('changePct');
+    pctEl.textContent = (changePct >= 0 ? '+' : '') + changePct.toFixed(2) + '%';
+    pctEl.style.color = changePct >= 0 ? '#00ff88' : '#ff4757';
+
+    document.getElementById('high24h').textContent = high.toFixed(2);
+    document.getElementById('low24h').textContent = low.toFixed(2);
+  } catch (e) { console.error('Ticker error:', e); }
+}
+
+// ============ WEBSOCKET ============
+function connectWebSocket() {
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    document.getElementById('statusDot').classList.add('live');
+    document.getElementById('statusText').innerHTML = '<span class="blink">●</span> LIVE - Realtime';
+    document.getElementById('statusText').style.color = '#00ff88';
+  };
+
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.e === 'kline') {
+      const k = msg.k;
+      const candle = {
+        time: k.t,
+        open: parseFloat(k.o),
+        high: parseFloat(k.h),
+        low: parseFloat(k.l),
+        close: parseFloat(k.c),
+        volume: parseFloat(k.v),
+        isClosed: k.x
+      };
+
+      // Update current price
+      document.getElementById('currentPrice').textContent = candle.close.toFixed(2);
+      document.getElementById('currentPrice').className = 'price-value ' +
+        (candle.close >= candle.open ? 'up' : 'down');
+      document.getElementById('priceTime').textContent = new Date(candle.time).toLocaleTimeString('th-TH');
+
+      if (candle.isClosed) {
+        // Push closed candle
+        candles.push({
+          time: candle.time,
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+          volume: candle.volume
+        });
+        if (candles.length > 500) candles.shift();
+        currentCandle = null;
+      } else {
+        currentCandle = candle;
+      }
+
+      updateChart();
+    }
+  };
+
+  ws.onclose = () => {
+    document.getElementById('statusDot').classList.remove('live');
+    document.getElementById('statusText').textContent = 'ขาดการเชื่อมต่อ - กำลังลองใหม่...';
+    document.getElementById('statusText').style.color = '#ff4757';
+    setTimeout(connectWebSocket, 3000);
+  };
+
+  ws.onerror = (e) => console.error('WS error:', e);
+}
+
+// ============ CHART ============
+function setupChart() {
+  const ctx = document.getElementById('priceChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [
+        {
+          label: 'Price',
+          data: [],
+          borderColor: '#d4af37',
+          backgroundColor: 'rgba(212,175,55,0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.1,
+          pointRadius: 0
+        },
+        {
+          label: 'EMA 5',
+          data: [],
+          borderColor: '#00ff88',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.2
+        },
+        {
+          label: 'EMA 21',
+          data: [],
+          borderColor: '#ff4757',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.2
+        },
+        {
+          label: 'Bollinger Upper',
+          data: [],
+          borderColor: 'rgba(100,150,255,0.5)',
+          borderWidth: 1,
+          borderDash: [3,3],
+          pointRadius: 0,
+          fill: false
+        },
+        {
+          label: 'Bollinger Lower',
+          data: [],
+          borderColor: 'rgba(100,150,255,0.5)',
+          borderWidth: 1,
+          borderDash: [3,3],
+          pointRadius: 0,
+          fill: '-1',
+          backgroundColor: 'rgba(100,150,255,0.05)'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 0 },
+      scales: {
+        x: {
+          type: 'time',
+          ticks: { color: '#8a7a4a', maxTicksLimit: 8 },
+          grid: { color: 'rgba(212,175,55,0.05)' }
+        },
+        y: {
+          ticks: { color: '#8a7a4a', callback: v => v.toFixed(0) },
+          grid: { color: 'rgba(212,175,55,0.08)' }
+        }
+      },
+      plugins: {
+        legend: { labels: { color: '#e8d9a0', font: { size: 10 } } },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.9)',
+          borderColor: '#d4af37',
+          borderWidth: 1,
+          titleColor: '#d4af37',
+          bodyColor: '#e8d9a0'
+        }
+      }
+    }
+  });
+  updateChart();
+}
+
+function updateChart() {
+  if (!chart) return;
+  const display = candles.slice(-120);
+  if (currentCandle) display.push(currentCandle);
+
+  const closes = display.map(c => c.close);
+  const ema5 = calcEMA(closes, 5);
+  const ema21 = calcEMA(closes, 21);
+  const bb = calcBollinger(closes, 20, 2);
+
+  chart.data.datasets[0].data = display.map(c => ({ x: c.time, y: c.close }));
+  chart.data.datasets[1].data = display.map((c, i) => ({ x: c.time, y: ema5[i] }));
+  chart.data.datasets[2].data = display.map((c, i) => ({ x: c.time, y: ema21[i] }));
+  chart.data.datasets[3].data = display.map((c, i) => ({ x: c.time, y: bb.upper[i] }));
+  chart.data.datasets[4].data = display.map((c, i) => ({ x: c.time, y: bb.lower[i] }));
+  chart.update('none');
+}
+
+// ============ INDICATORS ============
+function calcEMA(data, period) {
+  const k = 2 / (period + 1);
+  const result = [data[0]];
+  for (let i = 1; i < data.length; i++) {
+    result.push(data[i] * k + result[i-1] * (1-k));
+  }
+  return result;
+}
+
+function calcRSI(data, period = 14) {
+  if (data.length < period + 1) return 50;
+  let gains = 0, losses = 0;
+  for (let i = 1; i <= period; i++) {
+    const diff = data[i] - data[i-1];
+    if (diff >= 0) gains += diff; else losses -= diff;
+  }
+  let avgGain = gains / period;
+  let avgLoss = losses / period;
+  for (let i = period + 1; i < data.length; i++) {
+    const diff = data[i] - data[i-1];
+    const gain = diff > 0 ? diff : 0;
+    const loss = diff < 0 ? -diff : 0;
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
+  }
+  if (avgLoss === 0) return 100;
+  const rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
+}
+
+function calcMACD(data) {
+  const ema12 = calcEMA(data, 12);
+  const ema26 = calcEMA(data, 26);
+  const macd = ema12.map((v, i) => v - ema26[i]);
+  const signal = calcEMA(macd.slice(25), 9);
+  return {
+    macd: macd[macd.length - 1],
+    signal: signal[signal.length - 1],
+    histogram: macd[macd.length - 1] - signal[signal.length - 1]
+  };
+}
+
+function calcBollinger(data, period = 20, mult = 2) {
+  const upper = [], lower = [], middle = [];
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      upper.push(data[i]); lower.push(data[i]); middle.push(data[i]);
+      continue;
+    }
+    const slice = data.slice(i - period + 1, i + 1);
+    const mean = slice.reduce((a,b) => a+b, 0) / period;
+    const variance = slice.reduce((a,b) => a + Math.pow(b-mean,2), 0) / period;
+    const std = Math.sqrt(variance);
+    middle.push(mean);
+    upper.push(mean + mult * std);
+    lower.push(mean - mult * std);
+  }
+  return { upper, lower, middle };
+}
+
+function calcATR(candles, period = 14) {
+  if (candles.length < period + 1) return 0;
+  const trs = [];
+  for (let i = 1; i < candles.length; i++) {
+    const c = candles[i], p = candles[i-1];
+    const tr = Math.max(
+      c.high - c.low,
+      Math.abs(c.high - p.close),
+      Math.abs(c.low - p.close)
+    );
+    trs.push(tr);
+  }
+  let atr = trs.slice(0, period).reduce((a,b) => a+b, 0) / period;
+  for (let i = period; i < trs.length; i++) {
+    atr = (atr * (period - 1) + trs[i]) / period;
+  }
+  return atr;
+}
+
+// ============ LINEAR REGRESSION FOR PREDICTION ============
+function linearRegression(data, periods) {
+  const slice = data.slice(-periods);
+  const n = slice.length;
+  let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+  for (let i = 0; i < n; i++) {
+    sumX += i;
+    sumY += slice[i];
+    sumXY += i * slice[i];
+    sumXX += i * i;
+  }
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+  return { slope, intercept };
+}
+
+// ============ ANALYSIS ============
+function analyze() {
+  if (candles.length < 60) return;
+
+  const closes = candles.map(c => c.close);
+  const price = currentCandle ? currentCandle.close : closes[closes.length - 1];
+
+  // Calculate indicators
+  const ema5Arr = calcEMA(closes, 5);
+  const ema13Arr = calcEMA(closes, 13);
+  const ema21Arr = calcEMA(closes, 21);
+  const ema5 = ema5Arr[ema5Arr.length - 1];
+  const ema13 = ema13Arr[ema13Arr.length - 1];
+  const ema21 = ema21Arr[ema21Arr.length - 1];
+  const rsi = calcRSI(closes);
+  const macdData = calcMACD(closes);
+  const bb = calcBollinger(closes, 20, 2);
+  const bbUpper = bb.upper[bb.upper.length - 1];
+  const bbLower = bb.lower[bb.lower.length - 1];
+  const bbMiddle = bb.middle[bb.middle.length - 1];
+  const bbPctB = (price - bbLower) / (bbUpper - bbLower);
+  const atr = calcATR(candles);
+
+  // Update indicator display
+  document.getElementById('rsiVal').textContent = rsi.toFixed(1);
+  const rsiSig = document.getElementById('rsiSig');
+  if (rsi < 30) { rsiSig.textContent = 'OVERSOLD'; rsiSig.className = 'ind-signal bullish'; }
+  else if (rsi > 70) { rsiSig.textContent = 'OVERBOUGHT'; rsiSig.className = 'ind-signal bearish'; }
+  else { rsiSig.textContent = 'NEUTRAL'; rsiSig.className = 'ind-signal neutral'; }
+
+  document.getElementById('macdVal').textContent = macdData.histogram.toFixed(2);
+  const macdSig = document.getElementById('macdSig');
+  if (macdData.histogram > 0 && macdData.macd > macdData.signal) {
+    macdSig.textContent = 'BULLISH'; macdSig.className = 'ind-signal bullish';
+  } else if (macdData.histogram < 0 && macdData.macd < macdData.signal) {
+    macdSig.textContent = 'BEARISH'; macdSig.className = 'ind-signal bearish';
+  } else {
+    macdSig.textContent = 'NEUTRAL'; macdSig.className = 'ind-signal neutral';
+  }
+
+  document.getElementById('ema5Val').textContent = ema5.toFixed(2);
+  const ema5Sig = document.getElementById('ema5Sig');
+  if (ema5 > ema13) { ema5Sig.textContent = 'BULLISH'; ema5Sig.className = 'ind-signal bullish'; }
+  else { ema5Sig.textContent = 'BEARISH'; ema5Sig.className = 'ind-signal bearish'; }
+
+  document.getElementById('ema21Val').textContent = ema21.toFixed(2);
+  const ema21Sig = document.getElementById('ema21Sig');
+  if (price > ema21) { ema21Sig.textContent = 'ABOVE'; ema21Sig.className = 'ind-signal bullish'; }
+  else { ema21Sig.textContent = 'BELOW'; ema21Sig.className = 'ind-signal bearish'; }
+
+  document.getElementById('bbVal').textContent = (bbPctB * 100).toFixed(0) + '%';
+  const bbSig = document.getElementById('bbSig');
+  if (bbPctB < 0.2) { bbSig.textContent = 'OVERSOLD'; bbSig.className = 'ind-signal bullish'; }
+  else if (bbPctB > 0.8) { bbSig.textContent = 'OVERBOUGHT'; bbSig.className = 'ind-signal bearish'; }
+  else { bbSig.textContent = 'MIDDLE'; bbSig.className = 'ind-signal neutral'; }
+
+  document.getElementById('atrVal').textContent = atr.toFixed(2);
+
+  // ============ SCORING SYSTEM ============
+  let score = 0;
+  let maxScore = 10;
+
+  // EMA signals
+  if (ema5 > ema13) score += 1.5; else score -= 1.5;
+  if (ema13 > ema21) score += 1.5; else score -= 1.5;
+  if (price > ema21) score += 1; else score -= 1;
+
+  // RSI signals
+  if (rsi < 30) score += 2;
+  else if (rsi > 70) score -= 2;
+  else if (rsi < 45) score += 0.5;
+  else if (rsi > 55) score -= 0.5;
+
+  // MACD signals
+  if (macdData.histogram > 0 && macdData.macd > macdData.signal) score += 1.5;
+  else if (macdData.histogram < 0 && macdData.macd < macdData.signal) score -= 1.5;
+
+  // Bollinger signals
+  if (bbPctB < 0.1) score += 1.5;
+  else if (bbPctB > 0.9) score -= 1.5;
+  else if (bbPctB < 0.3) score += 0.5;
+  else if (bbPctB > 0.7) score -= 0.5;
+
+  // Momentum (last 10 candles)
+  const mom = closes[closes.length-1] - closes[closes.length-11];
+  if (mom > 0) score += 0.5; else score -= 0.5;
+
+  // Normalize score to -100 to 100
+  const normalizedScore = (score / maxScore) * 100;
+
+  // Update strength meter
+  const meterPos = ((normalizedScore + 100) / 200) * 100;
+  document.getElementById('meterPointer').style.left = meterPos + '%';
+  const strengthText = document.getElementById('strengthText');
+  if (normalizedScore > 50) { strengthText.textContent = 'STRONG BULLISH'; strengthText.style.color = '#00ff88'; }
+  else if (normalizedScore > 20) { strengthText.textContent = 'BULLISH'; strengthText.style.color = '#7fff7f'; }
+  else if (normalizedScore > -20) { strengthText.textContent = 'NEUTRAL'; strengthText.style.color = '#ffa000'; }
+  else if (normalizedScore > -50) { strengthText.textContent = 'BEARISH'; strengthText.style.color = '#ff7f7f'; }
+  else { strengthText.textContent = 'STRONG BEARISH'; strengthText.style.color = '#ff4757'; }
+
+  // ============ SIGNAL ============
+  const badge = document.getElementById('signalBadge');
+  const confidence = Math.min(95, Math.abs(normalizedScore) + 30);
+  document.getElementById('signalConfidence').textContent = `ความเชื่อมั่น: ${confidence.toFixed(0)}%`;
+
+  if (normalizedScore > 25) {
+    badge.textContent = '🟢 BUY';
+    badge.className = 'signal-badge buy';
+  } else if (normalizedScore < -25) {
+    badge.textContent = '🔴 SELL';
+    badge.className = 'signal-badge sell';
+  } else {
+    badge.textContent = '🟡 HOLD / WAIT';
+    badge.className = 'signal-badge hold';
+  }
+
+  // ============ ENTRY / TP / SL ============
+  const entry = price;
+  let tp1, tp2, tp3, sl;
+
+  if (normalizedScore > 0) {
+    // Bullish
+    tp1 = price + atr * 1.0;
+    tp2 = price + atr * 2.0;
+    tp3 = price + atr * 3.0;
+    sl = price - atr * 1.5;
+  } else {
+    // Bearish
+    tp1 = price - atr * 1.0;
+    tp2 = price - atr * 2.0;
+    tp3 = price - atr * 3.0;
+    sl = price + atr * 1.5;
+  }
+
+  document.getElementById('entry').textContent = entry.toFixed(2);
+  document.getElementById('tp1').textContent = tp1.toFixed(2);
+  document.getElementById('tp2').textContent = tp2.toFixed(2);
+  document.getElementById('tp3').textContent = tp3.toFixed(2);
+  document.getElementById('sl').textContent = sl.toFixed(2);
+
+  // ============ 1-HOUR PREDICTION ============
+  // Use linear regression on last 60 candles (1 hour of data)
+  const reg = linearRegression(closes, 60);
+  const futurePrice = price + reg.slope * 60; // 60 minutes ahead
+
+  // Confidence based on R² and indicator agreement
+  const predConf = Math.min(85, 40 + Math.abs(normalizedScore) * 0.4 + (atr > 0 ? 10 : 0));
+
+  // Range: price ± 1.5 ATR
+  const rangeLow = futurePrice - atr * 1.5;
+  const rangeHigh = futurePrice + atr * 1.5;
+
+  document.getElementById('predPrice').textContent = futurePrice.toFixed(2);
+  document.getElementById('predPrice').style.color =
+    futurePrice > price ? '#00ff88' : futurePrice < price ? '#ff4757' : '#d4af37';
+
+  document.getElementById('predRange').textContent =
+    `${rangeLow.toFixed(2)} ~ ${rangeHigh.toFixed(2)}`;
+
+  const trendEl = document.getElementById('predTrend');
+  const pctChange = ((futurePrice - price) / price) * 100;
+  if (pctChange > 0.1) {
+    trendEl.textContent = `📈 BULLISH (+${pctChange.toFixed(2)}%)`;
+    trendEl.style.color = '#00ff88';
+  } else if (pctChange < -0.1) {
+    trendEl.textContent = `📉 BEARISH (${pctChange.toFixed(2)}%)`;
+    trendEl.style.color = '#ff4757';
+  } else {
+    trendEl.textContent = `➡️ SIDEWAYS (${pctChange.toFixed(2)}%)`;
+    trendEl.style.color = '#ffa000';
+  }
+
+  document.getElementById('predConf').textContent = predConf.toFixed(0) + '%';
+  document.getElementById('predBar').style.width = predConf + '%';
+}
+
+// ============ START ============
+init();
+</script>
+</body>
+</html>
