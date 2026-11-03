@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gold Sources Comparison (Dynamic from CSV)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', 'Segoe UI', Tahoma, sans-serif;
+    background: #f0f2f5;
+    padding: 16px;
+    color: #222;
+    font-size: 13px;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 8px;
+    font-size: 1.4rem;
+    color: #1a1a2e;
+  }
+
+  .controls {
+    text-align: center;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .btn {
+    background: #4a5568;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .btn:hover { background: #2d3748; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .status {
+    font-size: 12px;
+    color: #555;
+    min-height: 18px;
+  }
+  .status.error { color: #c53030; }
+  .status.ok { color: #276749; }
+
+  .table-wrap {
+    overflow: auto;
+    max-height: 95vh;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+   /* min-width: 1400px;*/
+  }
+
+  th, td {
+    border: 1px solid #c8c8c8;
+    padding: 6px 8px;
+    vertical-align: top;
+    text-align: center;
+  }
+
+  /* ===== Sticky Header (2 rows) ===== */
+  thead th {
+    position: sticky;
+    z-index: 20;
+    font-weight: 600;
+    font-size: 12px;
+    color: #fff;
+  }
+
+  /* Row 1 of header */
+  thead tr:first-child th {
+    top: 0;
+    background: #4a5568;
+  }
+
+  /* Row 2 of header (sub High/Low) */
+  thead tr:nth-child(2) th {
+    top: 34px; /* approximate height of first header row */
+    background: #e2e8f0;
+    color: #333;
+  }
+
+  .th-date { background: #2d3748 !important; min-width: 90px; }
+  .th-time { background: #2d3748 !important; min-width: 55px; }
+
+  .th-s1 { background: #5b7db1 !important; }
+  .th-s2 { background: #d4a373 !important; }
+  .th-s3 { background: #e9c46a !important; color: #333 !important; }
+  .th-s4 { background: #7aa2d4 !important; }
+  .th-s5 { background: #8abf8a !important; color: #222 !important; }
+  .th-s6 { background: #5b7db1 !important; }
+
+  .th-event { background: #5a626e !important; min-width: 180px; }
+  .th-suggest { background: #5a626e !important; min-width: 100px; }
+
+  .sub-h { background: #e2e8f0 !important; color: #333 !important; font-size: 11px; font-weight: 600; }
+  .sub-s1 { background: #c5d4eb !important; }
+  .sub-s2 { background: #f0d9c0 !important; }
+  .sub-s3 { background: #f5e6b3 !important; }
+  .sub-s4 { background: #c9dcf0 !important; }
+  .sub-s5 { background: #c8e0c8 !important; }
+  .sub-s6 { background: #c5d4eb !important; }
+
+  /* ===== Sticky first 3 columns ===== */
+  .sticky-col {
+    position: sticky;
+    z-index: 5;
+    background: #edf2f7;
+  }
+
+  /* date column */
+  td.sticky-col:nth-child(1),
+  th.sticky-col:nth-child(1) {
+    left: 0;
+    min-width: 90px;
+    max-width: 100px;
+  }
+
+  /* begin column */
+  td.sticky-col:nth-child(2),
+  th.sticky-col:nth-child(2) {
+    left: 90px;
+    min-width: 55px;
+    max-width: 60px;
+  }
+
+  /* end column */
+  td.sticky-col:nth-child(3),
+  th.sticky-col:nth-child(3) {
+    left: 145px;
+    min-width: 55px;
+    max-width: 60px;
+    border-right: 2px solid #4a5568;
+  }
+
+  /* Header sticky columns need higher z-index */
+  thead th.sticky-col {
+    z-index: 30;
+    background: #2d3748 !important;
+    color: #fff;
+  }
+
+  thead tr:nth-child(2) th.sticky-col {
+    background: #e2e8f0 !important;
+    color: #333 !important;
+  }
+
+  /* Body sticky cells */
+  td.sticky-col {
+    background: #edf2f7;
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) td.sticky-col {
+    background: #e2e8f0;
+  }
+
+  .c-s1 { background: #e8eef7; }
+  .c-s2 { background: #fdf3e9; }
+  .c-s3 { background: #fdf8e8; }
+  .c-s4 { background: #eaf2fa; }
+  .c-s5 { background: #eaf5ea; }
+  .c-s6 { background: #e8eef7; }
+
+  .c-event, .c-suggest {
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.45;
+    background: #fafafa;
+  }
+
+  .c-event ul, .c-suggest ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .c-event li, .c-suggest li {
+    padding: 2px 0 2px 12px;
+    position: relative;
+  }
+
+  .c-event li::before, .c-suggest li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #4a5568;
+    font-weight: bold;
+  }
+
+  .src-label {
+    font-weight: 600;
+    font-size: 11px;
+    margin-right: 3px;
+  }
+  .src1 { color: #3b5b8a; }
+  .src2 { color: #b87a3a; }
+  .src3 { color: #a68b2d; }
+  .src4 { color: #3d6b9a; }
+  .src5 { color: #3d7a3d; }
+  .src6 { color: #3b5b8a; }
+
+  .badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin: 1px 0;
+  }
+  .badge-BUY  { background: #c6f6d5; color: #22543d; }
+  .badge-SELL { background: #fed7d7; color: #822727; }
+  .badge-WAIT { background: #feebc8; color: #7b341e; }
+
+  tr:hover td:not(.sticky-col) { filter: brightness(0.97); }
+
+  .note {
+    margin-top: 12px;
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+  }
+</style>
+</head>
+<body>
+ 
+  <h1 style='display:none'>Gold Intraday Sources Comparison</h1>
+  <div class="controls" style='display:none'>
+    <button class="btn" id="btnReload" onclick="loadAll()">🔄 Reload from CSV</button>
+    <span class="status" id="status">กำลังโหลด...</span>
+  </div>
+
+  
+  <div class="table-wrap">
+    <div id="loadingMsg" class="loading">กำลังดึงข้อมูลจาก source1–5.csv ...</div>
+    <table id="mainTable" style="display:none;">
+      <thead>
+        <tr>
+          <th class="th-date sticky-col">date</th>
+          <th class="th-time sticky-col" colspan="2">time</th>
+          <th class="th-s1" colspan="2">source1</th>
+          <th class="th-s2" colspan="2">source2</th>
+          <th class="th-s3" colspan="2">source3</th>
+          <th class="th-s4" colspan="2">source4</th>
+          <th class="th-s5" colspan="2">source5</th>
+          <th class="th-s6" colspan="2">source6</th>
+          <th class="th-event" rowspan="2">event</th>
+          <th class="th-suggest" rowspan="2">suggest</th>
+        </tr>
+        <tr>
+          <!-- empty under date because rowspan not used; we use sticky-col on body -->
+          <th class="sub-h sticky-col" style="top:34px;"></th>
+          <th class="sub-h sticky-col">begin</th>
+          <th class="sub-h sticky-col">end</th>
+          <th class="sub-s1">High</th>
+          <th class="sub-s1">Low</th>
+          <th class="sub-s2">High</th>
+          <th class="sub-s2">Low</th>
+          <th class="sub-s3">High</th>
+          <th class="sub-s3">Low</th>
+          <th class="sub-s4">High</th>
+          <th class="sub-s4">Low</th>
+          <th class="sub-s5">High</th>
+          <th class="sub-s5">Low</th>
+          <th class="sub-s6">High</th>
+          <th class="sub-s6">Low</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <p class="note">
+    ไฟล์นี้ดึงข้อมูลจาก <code>source1.csv</code> – <code>source5.csv</code> ที่อยู่โฟลเดอร์เดียวกับ HTML<br>
+    แก้ข้อมูลใน CSV แล้วกดปุ่ม <strong>Reload</strong> (หรือรีเฟรชหน้า) ตารางจะอัปเดตทันที<br>
+    รูปแบบ CSV ที่รองรับ: <code>source,date,t1,t2,mx,mn,event,sugg</code><br>
+    <strong>หมายเหตุ:</strong> เวลาถูก normalize เป็น HH:MM (ไม่สนใจวินาที) เพื่อจับคู่ช่วงเวลาข้าม source
+  </p>
+
+<script>
+const SOURCES = ['source1', 'source2', 'source3', 'source4', 'source5', 'source6'];
+const SRC_CLASS = { source1: 'src1', source2: 'src2', source3: 'src3', source4: 'src4', source5: 'src5', source6: 'src6' };
+const CELL_CLASS = { source1: 'c-s1', source2: 'c-s2', source3: 'c-s3', source4: 'c-s4', source5: 'c-s5', source6: 'c-s6' };
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim().toLowerCase());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (cols.length < headers.length) continue;
+    const obj = {};
+    headers.forEach((h, idx) => {
+      let v = (cols[idx] || '').replace(/^"|"$/g, '').trim();
+      obj[h] = v;
+    });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '';
+  let inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuote && line[i+1] === '"') { cur += '"'; i++; }
+      else inQuote = !inQuote;
+    } else if (ch === ',' && !inQuote) {
+      result.push(cur);
+      cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+/** Normalize time to HH:MM (strip seconds) */
+function normTime(t) {
+  if (!t) return '';
+  t = String(t).trim();
+  // already HH:MM or HH:MM:SS or H:MM
+  const m = t.match(/^(\d{1,2}):(\d{2})(?::\d{2})?/);
+  if (m) {
+    return m[1].padStart(2, '0') + ':' + m[2];
+  }
+  return t.substring(0, 5);
+}
+
+function fmtNum(v) {
+  if (v === undefined || v === null || v === '' || v === '-') return '-';
+  const n = parseFloat(v);
+  if (isNaN(n)) return v;
+  return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+}
+
+function fmtDate(d) {
+  if (!d) return '-';
+  const p = d.split('-');
+  if (p.length === 3) return `${p[2]}-${p[1]}-${p[0]}`;
+  return d;
+}
+
+function badge(sugg) {
+  if (!sugg) return '';
+  const s = sugg.toUpperCase().trim();
+  let cls = 'badge-WAIT';
+  if (s.includes('BUY')) cls = 'badge-BUY';
+  else if (s.includes('SELL')) cls = 'badge-SELL';
+  return `<span class="badge ${cls}">${sugg}</span>`;
+}
+
+async function fetchSource(name) {
+  const url = `./${name}.csv`;
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`${res.status}`);
+    const text = await res.text();
+    const rows = parseCSV(text);
+    return { name, rows, ok: true };
+  } catch (e) {
+    return { name, rows: [], ok: false, error: e.message };
+  }
+}
+
+/** Key without seconds */
+function buildKey(row) {
+  const t1 = normTime(row.t1);
+  const t2 = normTime(row.t2);
+  return `${row.date}|${t1}|${t2}`;
+}
+
+async function loadAll() {
+  const btn = document.getElementById('btnReload');
+  const status = document.getElementById('status');
+  const tbody = document.getElementById('tbody');
+  const table = document.getElementById('mainTable');
+  const loadingMsg = document.getElementById('loadingMsg');
+
+  btn.disabled = true;
+  status.className = 'status';
+  status.textContent = 'กำลังโหลด CSV...';
+  loadingMsg.style.display = 'block';
+  table.style.display = 'none';
+  tbody.innerHTML = '';
+
+  const results = await Promise.all(SOURCES.map(fetchSource));
+
+  const loaded = results.filter(r => r.ok);
+  const failed = results.filter(r => !r.ok);
+
+  // Merge by normalized time key
+  const slotMap = new Map();
+
+  for (const res of results) {
+    for (const row of res.rows) {
+      const key = buildKey(row);
+      if (!slotMap.has(key)) {
+        slotMap.set(key, {
+          date: row.date,
+          t1: normTime(row.t1),
+          t2: normTime(row.t2),
+          sources: {}
+        });
+      }
+      // keep the first occurrence of each source (or overwrite – last wins)
+      slotMap.get(key).sources[res.name] = row;
+    }
+  }
+
+  const slots = Array.from(slotMap.values()).sort((a, b) => {
+    const da = a.date + a.t1;
+    const db = b.date + b.t1;
+    return da.localeCompare(db);
+  });
+
+  if (slots.length === 0) {
+    status.className = 'status error';
+    status.textContent = 'ไม่พบข้อมูลจากไฟล์ CSV ใดเลย';
+    loadingMsg.textContent = 'ไม่พบข้อมูล — ตรวจสอบว่ามีไฟล์ source1.csv … source5.csv อยู่โฟลเดอร์เดียวกับ HTML';
+    btn.disabled = false;
+    return;
+  }
+
+  let html = '';
+  for (const slot of slots) {
+    html += '<tr>';
+    html += `<td class="sticky-col">${fmtDate(slot.date)}</td>`;
+    html += `<td class="sticky-col">${slot.t1}</td>`;
+    html += `<td class="sticky-col">${slot.t2}</td>`;
+
+    for (const src of SOURCES) {
+      const row = slot.sources[src];
+      const cls = CELL_CLASS[src];
+      if (row) {
+        html += `<td class="${cls}">${fmtNum(row.mx)}</td>`;
+        html += `<td class="${cls}">${fmtNum(row.mn)}</td>`;
+      } else {
+        html += `<td class="${cls}">-</td><td class="${cls}">-</td>`;
+      }
+    }
+
+    // Event bullets
+    html += '<td class="c-event"><ul>';
+    for (const src of SOURCES) {
+      const row = slot.sources[src];
+      if (row && row.event) {
+        const short = src.replace('source', 'S');
+        html += `<li><span class="src-label ${SRC_CLASS[src]}">${short}:</span> ${escapeHtml(row.event)}</li>`;
+      }
+    }
+    html += '</ul></td>';
+
+    // Suggest bullets
+    html += '<td class="c-suggest"><ul>';
+    for (const src of SOURCES) {
+      const row = slot.sources[src];
+      if (row && row.sugg) {
+        const short = src.replace('source', 'S');
+        html += `<li><span class="src-label ${SRC_CLASS[src]}">${short}:</span> ${badge(row.sugg)}</li>`;
+      }
+    }
+    html += '</ul></td>';
+
+    html += '</tr>';
+  }
+
+  tbody.innerHTML = html;
+  loadingMsg.style.display = 'none';
+  table.style.display = 'table';
+
+  // Fix sticky top of second header row after render (measure actual height)
+  requestAnimationFrame(() => {
+    const firstRow = table.querySelector('thead tr:first-child');
+    if (firstRow) {
+      const h = firstRow.getBoundingClientRect().height;
+      table.querySelectorAll('thead tr:nth-child(2) th').forEach(th => {
+        th.style.top = h + 'px';
+      });
+    }
+  });
+
+  let msg = `โหลดสำเร็จ ${loaded.length}/5 ไฟล์ • ${slots.length} ช่วงเวลา`;
+  if (failed.length) {
+    msg += ` (ไม่พบ: ${failed.map(f => f.name).join(', ')})`;
+    status.className = 'status';
+  } else {
+    status.className = 'status ok';
+  }
+  status.textContent = msg;
+  btn.disabled = false;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+loadAll();
+</script>
+</body>
+</html>
