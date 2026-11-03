@@ -121,28 +121,36 @@
   .sub-s6 { background: #c5d4eb !important; }
 
   /* ===== Sticky first 3 columns ===== */
+/* ===== Sticky columns (Desktop: date+begin+end / Mobile: only begin) ===== */
   .sticky-col {
-    position: sticky;
-    z-index: 5;
     background: #edf2f7;
   }
 
-  /* date column */
+ td.sticky-col {
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) td.sticky-col {
+    background: #e2e8f0;
+  }
+  
+
+  /* date column 
   td.sticky-col:nth-child(1),
   th.sticky-col:nth-child(1) {
     left: 0;
     min-width: 90px;
     max-width: 100px;
   }
-
-  /* begin column */
+*/
+  /* begin column 
   td.sticky-col:nth-child(2),
   th.sticky-col:nth-child(2) {
     left: 90px;
     min-width: 55px;
     max-width: 60px;
   }
-
+*/
   /* end column */
   td.sticky-col:nth-child(3),
   th.sticky-col:nth-child(3) {
@@ -245,6 +253,91 @@
     padding: 40px;
     color: #666;
   }
+
+/* ---- Desktop (≥768px): fix date + begin + end ---- */
+  @media (min-width: 768px) {
+    .sticky-col {
+      position: sticky;
+      z-index: 5;
+    }
+
+    /* date */
+    td.sticky-col:nth-child(1),
+    th.sticky-col:nth-child(1) {
+      left: 0;
+      min-width: 90px;
+      max-width: 100px;
+    }
+
+    /* begin */
+    td.sticky-col:nth-child(2),
+    th.sticky-col:nth-child(2) {
+      left: 90px;
+      min-width: 55px;
+      max-width: 60px;
+    }
+
+    /* end */
+    td.sticky-col:nth-child(3),
+    th.sticky-col:nth-child(3) {
+      left: 145px;
+      min-width: 55px;
+      max-width: 60px;
+      border-right: 2px solid #4a5568;
+    }
+
+    thead th.sticky-col {
+      z-index: 30;
+      background: #2d3748 !important;
+      color: #fff;
+    }
+
+    thead tr:nth-child(2) th.sticky-col {
+      background: #e2e8f0 !important;
+      color: #333 !important;
+    }
+  }  
+  
+/* ---- Mobile (<768px): fix ONLY begin (เวลาเริ่มต้น) ---- */
+  @media (max-width: 767px) {
+    /* date & end → ไม่ sticky */
+    td.sticky-col:nth-child(1),
+    th.sticky-col:nth-child(1),
+    td.sticky-col:nth-child(3),
+    th.sticky-col:nth-child(3) {
+      position: static;
+      left: auto;
+    }
+
+    /* begin เท่านั้นที่ sticky */
+    td.sticky-col:nth-child(2),
+    th.sticky-col:nth-child(2) {
+      position: sticky;
+      left: 0;
+      z-index: 5;
+      min-width: 55px;
+      max-width: 60px;
+      border-right: 2px solid #4a5568;
+      background: #edf2f7;
+    }
+
+    tr:nth-child(even) td.sticky-col:nth-child(2) {
+      background: #e2e8f0;
+    }
+
+    thead th.sticky-col:nth-child(2) {
+      z-index: 30;
+      background: #2d3748 !important;
+      color: #fff;
+    }
+
+    thead tr:nth-child(2) th.sticky-col:nth-child(2) {
+      background: #e2e8f0 !important;
+      color: #333 !important;
+    }
+  }
+
+  
 </style>
 </head>
 <body>
