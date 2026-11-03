@@ -57,7 +57,7 @@
 
   .table-wrap {
     overflow: auto;
-    max-height: 80vh;
+    max-height: 95vh;
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.08);
@@ -244,12 +244,14 @@
 </style>
 </head>
 <body>
-  <h1>Gold Intraday Sources Comparison</h1>
-  <div class="controls">
+ 
+  <h1 style='display:none'>Gold Intraday Sources Comparison</h1>
+  <div class="controls" style='display:none'>
     <button class="btn" id="btnReload" onclick="loadAll()">🔄 Reload from CSV</button>
     <span class="status" id="status">กำลังโหลด...</span>
   </div>
 
+  
   <div class="table-wrap">
     <div id="loadingMsg" class="loading">กำลังดึงข้อมูลจาก source1–5.csv ...</div>
     <table id="mainTable" style="display:none;">
