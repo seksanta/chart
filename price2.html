@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard แสดงข้อมูล Source 1-5</title>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Leelawadee UI', 'Tahoma';
+        margin: 20px;
+        background-color: #f8f9fa;
+        color: #333;
+    }
+    h2 {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+    .controls {
+        background-color: #ffffff;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: center;
+    }
+    .upload-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        background: #f1f3f5;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+    }
+    .upload-group label {
+        font-weight: bold;
+    }
+    .upload-group input[type="file"] {
+        font-size: 12px;
+    }
+    
+    /* Table Container & Sticky Positioning */
+    .table-container {
+        max-height: 75vh;
+        overflow: auto;
+        border: 1px solid #ccc;
+        background-color: #fff;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+        font-size: 13px;
+    }
+
+    th, td {
+        border-right: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        padding: 6px 10px;
+        white-space: nowrap;
+        vertical-align: top; /* vertical-align top ตามที่กำหนด */
+    }
+
+    /* Wrap text for event and suggest */
+    td.cell-event, td.cell-suggest {
+        white-space: normal;
+        min-width: 250px;
+        max-width: 380px;
+    }
+
+    ul.bullet-list {
+        margin: 0;
+        padding-left: 18px;
+    }
+    ul.bullet-list li {
+        margin-bottom: 4px;
+        line-height: 1.35;
+    }
+    ul.bullet-list li:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Header styling */
+    thead tr:nth-child(1) th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        text-align: center;
+        font-weight: bold;
+        height: 32px;
+    }
+
+    thead tr:nth-child(2) th {
+        position: sticky;
+        top: 32px; /* ความสูงของแถวแรก */
+        z-index: 10;
+        text-align: center;
+        font-weight: bold;
+        height: 28px;
+        background-color: #e9ecef;
+    }
+
+    /* Source Colors (ถอดแบบจากภาพตัวอย่าง) */
+    .bg-date-time { background-color: #d9d9d9; color: #000; }
+    
+    .bg-source1 { background-color: #b4c6e7; color: #000; }
+    .bg-source2 { background-color: #fce4d6; color: #000; }
+    .bg-source3 { background-color: #fff2cc; color: #000; }
+    .bg-source4 { background-color: #ddebf7; color: #000; }
+    .bg-source5 { background-color: #e2efda; color: #000; }
+    .bg-event-sug { background-color: #d9d9d9; color: #000; }
+
+    /* Sticky Fix 3 Columns (date, begin, end) */
+    /* Column 1: Date */
+    th.col-fixed-1, td.col-fixed-1 {
+        position: sticky;
+        left: 0;
+        z-index: 5;
+        background-color: #f8f9fa;
+        min-width: 90px;
+        text-align: center;
+    }
+    /* Column 2: Begin */
+    th.col-fixed-2, td.col-fixed-2 {
+        position: sticky;
+        left: 90px; /* ความกว้าง Column 1 */
+        z-index: 5;
+        background-color: #f8f9fa;
+        min-width: 65px;
+        text-align: center;
+    }
+    /* Column 3: End */
+    th.col-fixed-3, td.col-fixed-3 {
+        position: sticky;
+        left: 155px; /* ความกว้าง Column 1 + 2 */
+        z-index: 5;
+        background-color: #f8f9fa;
+        min-width: 65px;
+        text-align: center;
+        border-right: 2px solid #888; /* เส้นแบ่งโซน */
+    }
+
+    /* Z-Index สำหรับ Header ส่วนที่ซ้อนกับ Fixed Columns */
+    thead tr:nth-child(1) th.col-fixed-1,
+    thead tr:nth-child(1) th.col-fixed-2,
+    thead tr:nth-child(1) th.col-fixed-3,
+    thead tr:nth-child(2) th.col-fixed-1,
+    thead tr:nth-child(2) th.col-fixed-2,
+    thead tr:nth-child(2) th.col-fixed-3 {
+        z-index: 20;
+        background-color: #d9d9d9;
+    }
+
+    /* Alignment ข้อมูลตัวเลข */
+    .num-col {
+        text-align: right;
+        min-width: 55px;
+    }
+
+</style>
+</head>
+<body>
+
+<h2>ระบบแสดงผลเปรียบเทียบข้อมูล Source 1 - 5</h2>
+
+<div class="controls">
+    <div style="width: 100%; font-weight: bold; margin-bottom: 5px;">อัปโหลดไฟล์ CSV (source1.csv - source5.csv) เพื่ออัปเดตข้อมูลแบบ Dynamic:</div>
+    <div class="upload-group">
+        <label>Source 1:</label>
+        <input type="file" id="file-source1" accept=".csv" onchange="handleFileUpload(event, 1)">
+    </div>
+    <div class="upload-group">
+        <label>Source 2:</label>
+        <input type="file" id="file-source2" accept=".csv" onchange="handleFileUpload(event, 2)">
+    </div>
+    <div class="upload-group">
+        <label>Source 3:</label>
+        <input type="file" id="file-source3" accept=".csv" onchange="handleFileUpload(event, 3)">
+    </div>
+    <div class="upload-group">
+        <label>Source 4:</label>
+        <input type="file" id="file-source4" accept=".csv" onchange="handleFileUpload(event, 4)">
+    </div>
+    <div class="upload-group">
+        <label>Source 5:</label>
+        <input type="file" id="file-source5" accept=".csv" onchange="handleFileUpload(event, 5)">
+    </div>
+</div>
+
+<div class="table-container">
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th rowspan="2" class="col-fixed-1 bg-date-time">date</th>
+                <th colspan="2" class="col-fixed-2 bg-date-time" style="border-right: none;">time</th>
+                <th style="display:none;"></th>
+                <th colspan="2" class="bg-source1">source1</th>
+                <th colspan="2" class="bg-source2">source2</th>
+                <th colspan="2" class="bg-source3">source3</th>
+                <th colspan="2" class="bg-source4">source4</th>
+                <th colspan="2" class="bg-source5">source5</th>
+                <th rowspan="2" class="bg-event-sug">event</th>
+                <th rowspan="2" class="bg-event-sug">suggest</th>
+            </tr>
+            <tr>
+                <th class="col-fixed-2 bg-date-time">begin</th>
+                <th class="col-fixed-3 bg-date-time">end</th>
+                <th class="bg-source1">High</th>
+                <th class="bg-source1">Low</th>
+                <th class="bg-source2">High</th>
+                <th class="bg-source2">Low</th>
+                <th class="bg-source3">High</th>
+                <th class="bg-source3">Low</th>
+                <th class="bg-source4">High</th>
+                <th class="bg-source4">Low</th>
+                <th class="bg-source5">High</th>
+                <th class="bg-source5">Low</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- Data Rows Rendered JS -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+// เก็บข้อมูลจาก CSV 1-5
+const sourcesData = {
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+    5: []
+};
+
+// อ่านไฟล์อัตโนมัติเมื่อเริ่มต้นถ้าไฟล์อยู่ในตำแหน่งเดียวกัน หรือโหลด Dynamic ผ่าน UI
+window.addEventListener('DOMContentLoaded', () => {
+    // โหลดข้อมูลเริ่มต้นจากไฟล์ source1-5.csv หากเปิดใน Server
+    for (let i = 1; i <= 5; i++) {
+        fetch(`source${i}.csv`)
+            .then(res => res.ok ? res.text() : null)
+            .then(text => {
+                if (text) {
+                    sourcesData[i] = parseCSV(text);
+                    renderTable();
+                }
+            })
+            .catch(() => {});
+    }
+});
+
+// CSV Parser
+function parseCSV(text) {
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length <= 1) return [];
+
+    const headerLine = lines[0];
+    const sep = headerLine.includes('\t') ? '\t' : ',';
+    const headers = headerLine.split(sep).map(h => h.trim().replace(/^"|"$/g, ''));
+    const result = [];
+
+    for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        
+        const row = [];
+        let cur = '';
+        let inQuotes = false;
+        const line = lines[i];
+
+        for (let c = 0; c < line.length; c++) {
+            const char = line[c];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === sep && !inQuotes) {
+                row.push(cur.trim().replace(/^"|"$/g, ''));
+                cur = '';
+            } else {
+                cur += char;
+            }
+        }
+        row.push(cur.trim().replace(/^"|"$/g, ''));
+
+        if (row.length > 0) {
+            const obj = {};
+            headers.forEach((h, index) => {
+                obj[h] = row[index] !== undefined ? row[index] : '';
+            });
+
+            // Normalization
+            result.push({
+                date: formatDate(obj.date || obj.Date || ''),
+                t1: formatTime(obj.t1 || obj.begin || obj.Time_Begin || ''),
+                t2: formatTime(obj.t2 || obj.end || item.Time_End || ''),
+                mx: formatNum(obj.mx || obj.High || obj.high || ''),
+                mn: formatNum(obj.mn || obj.Low || obj.low || ''),
+                event: obj.event || obj.Event || '',
+                sugg: obj.sugg || obj.suggest || obj.Suggest || ''
+            });
+        }
+    }
+    return result;
+}
+
+function formatTime(t) {
+    if (!t) return '';
+    const parts = t.trim().split(':');
+    if (parts.length >= 2) {
+        return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+    }
+    return t;
+}
+
+function formatDate(d) {
+    if (!d) return '';
+    d = d.trim();
+    if (d.includes('-')) {
+        const parts = d.split('-');
+        if (parts[0].length === 4) {
+            return `${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[0]}`;
+        }
+    }
+    return d;
+}
+
+function formatNum(numStr) {
+    if (!numStr) return '';
+    let n = parseFloat(numStr.replace(/,/g, ''));
+    if (isNaN(n)) return numStr;
+    return n.toLocaleString('en-US');
+}
+
+// Handle Manual Upload
+function handleFileUpload(event, sourceId) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        sourcesData[sourceId] = parseCSV(text);
+        renderTable();
+    };
+    reader.readAsText(file);
+}
+
+// Render Main Table
+function renderTable() {
+    const tableBody = document.getElementById('tableBody');
+    tableBody.innerHTML = '';
+
+    // Collect all unique time slots
+    const keysMap = new Map();
+
+    for (let s = 1; s <= 5; s++) {
+        const list = sourcesData[s] || [];
+        list.forEach(row => {
+            if (row.date && row.t1 && row.t2) {
+                const key = `${row.date}_${row.t1}_${row.t2}`;
+                if (!keysMap.has(key)) {
+                    keysMap.set(key, { date: row.date, t1: row.t1, t2: row.t2 });
+                }
+            }
+        });
+    }
+
+    // Sort time slots
+    const sortedKeys = Array.from(keysMap.values()).sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return a.t1.localeCompare(b.t1);
+    });
+
+    sortedKeys.forEach(slot => {
+        const tr = document.createElement('tr');
+
+        // 1. Date
+        const tdDate = document.createElement('td');
+        tdDate.className = 'col-fixed-1';
+        tdDate.textContent = slot.date;
+        tr.appendChild(tdDate);
+
+        // 2. Begin
+        const tdBegin = document.createElement('td');
+        tdBegin.className = 'col-fixed-2';
+        tdBegin.textContent = slot.t1;
+        tr.appendChild(tdBegin);
+
+        // 3. End
+        const tdEnd = document.createElement('td');
+        tdEnd.className = 'col-fixed-3';
+        tdEnd.textContent = slot.t2;
+        tr.appendChild(tdEnd);
+
+        const eventsList = [];
+        const suggsList = [];
+
+        // Sources 1 to 5 (High, Low)
+        for (let s = 1; s <= 5; s++) {
+            const sData = (sourcesData[s] || []).find(r => r.date === slot.date && r.t1 === slot.t1 && r.t2 === slot.t2);
+
+            const highVal = sData ? sData.mx : '';
+            const lowVal = sData ? sData.mn : '';
+
+            const tdHigh = document.createElement('td');
+            tdHigh.className = `num-col bg-source${s}`;
+            tdHigh.textContent = highVal;
+            tr.appendChild(tdHigh);
+
+            const tdLow = document.createElement('td');
+            tdLow.className = `num-col bg-source${s}`;
+            tdLow.textContent = lowVal;
+            tr.appendChild(tdLow);
+
+            // Collect event bullet points
+            if (sData && sData.event && sData.event.trim() !== '') {
+                const lines = sData.event.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+                lines.forEach(l => eventsList.push(l));
+            }
+
+            // Collect suggest bullet points
+            if (sData && sData.sugg && sData.sugg.trim() !== '') {
+                const lines = sData.sugg.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+                lines.forEach(l => suggsList.push(l));
+            }
+        }
+
+        // Event Column (Bullets)
+        const tdEvent = document.createElement('td');
+        tdEvent.className = 'cell-event';
+        if (eventsList.length > 0) {
+            const ul = document.createElement('ul');
+            ul.className = 'bullet-list';
+            eventsList.forEach(text => {
+                const li = document.createElement('li');
+                let cleanText = text.replace(/^-\s*/, '');
+                li.textContent = '-' + cleanText;
+                ul.appendChild(li);
+            });
+            tdEvent.appendChild(ul);
+        }
+        tr.appendChild(tdEvent);
+
+        // Suggest Column (Bullets)
+        const tdSuggest = document.createElement('td');
+        tdSuggest.className = 'cell-suggest';
+        if (suggsList.length > 0) {
+            const ul = document.createElement('ul');
+            ul.className = 'bullet-list';
+            suggsList.forEach(text => {
+                const li = document.createElement('li');
+                let cleanText = text.replace(/^-\s*/, '');
+                li.textContent = '-' + cleanText;
+                ul.appendChild(li);
+            });
+            tdSuggest.appendChild(ul);
+        }
+        tr.appendChild(tdSuggest);
+
+        tableBody.appendChild(tr);
+    });
+}
+</script>
+
+</body>
+</html>
