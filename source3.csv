@@ -1,19 +1,19 @@
 ﻿source,date,t1,t2,mx,mn,event,sugg
-source3,2026-11-04,12:00,13:00,3958,3942,Momentum,buy
-source3,2026-11-04,13:00,14:00,3962,3946,Europe transition,buy
-source3,2026-11-04,14:00,15:00,3965,3948,Europe open,buy
-source3,2026-11-04,15:00,16:00,3968,3950,Europe flow,buy
-source3,2026-11-04,16:00,17:00,3970,3952,Resistance test,sell
-source3,2026-11-04,17:00,18:00,3965,3948,Pre-US,sell
-source3,2026-11-04,18:00,19:00,3962,3942,Pre-US positioning,sell
-source3,2026-11-04,19:00,20:00,3960,3938,US data risk,wait
-source3,2026-11-04,20:00,21:00,3972,3935,US volatility,wait
-source3,2026-11-04,21:00,22:00,3978,3945,USD yields reaction,buy
-source3,2026-11-04,22:00,23:00,3982,3952,US session,buy
-source3,2026-11-04,23:00,00:00,3980,3955,Late US,sell
-source3,2026-11-05,00:00,01:00,3972,3948,Late US,sell
-source3,2026-11-05,01:00,02:00,3968,3942,Trend check,sell
-source3,2026-11-05,02:00,03:00,3962,3938,Thin liquidity,sell
-source3,2026-11-05,03:00,04:00,3958,3935,Consolidation,buy
-source3,2026-11-05,04:00,05:00,3960,3938,US close,buy
-source3,2026-11-05,05:00,06:00,3962,3940,Rollover,buy
+source3,2026-11-04,12:00,13:00,4010,3992,Breakout momentum,buy
+source3,2026-11-04,13:00,14:00,4018,3998,Asia-Europe,buy
+source3,2026-11-04,14:00,15:00,4022,4002,Europe open,buy
+source3,2026-11-04,15:00,16:00,4025,4005,Momentum,buy
+source3,2026-11-04,16:00,17:00,4028,4008,Resistance,sell
+source3,2026-11-04,17:00,18:00,4022,4000,Pre-US,sell
+source3,2026-11-04,18:00,19:00,4018,3995,Data prep,wait
+source3,2026-11-04,19:00,20:00,4035,3985,US data,wait
+source3,2026-11-04,20:00,21:00,4042,3990,US volatility,wait
+source3,2026-11-04,21:00,22:00,4048,4002,ISM reaction,buy
+source3,2026-11-04,22:00,23:00,4052,4010,US session,buy
+source3,2026-11-04,23:00,00:00,4048,4015,Profit taking,sell
+source3,2026-11-05,00:00,01:00,4040,4008,Late US,sell
+source3,2026-11-05,01:00,02:00,4035,4002,Late US,sell
+source3,2026-11-05,02:00,03:00,4028,3998,Trend check,sell
+source3,2026-11-05,03:00,04:00,4025,3995,Thin liquidity,wait
+source3,2026-11-05,04:00,05:00,4030,4000,US close,buy
+source3,2026-11-05,05:00,06:00,4032,4002,Rollover,buy
