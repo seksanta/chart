@@ -1,15 +1,25 @@
 ﻿source,date,t1,t2,mx,mn,event,sugg
-source3,2026-11-04,16:00,17:00,4048,4026,Europe flow / resistance,sell
-source3,2026-11-04,17:00,18:00,4052,4028,Pre-US positioning,sell
-source3,2026-11-04,18:00,19:00,4058,4030,ADP risk,wait
-source3,2026-11-04,19:00,20:00,4065,4018,US data volatility,wait
-source3,2026-11-04,20:00,21:00,4058,4022,Data reaction,buy
-source3,2026-11-04,21:00,22:00,4068,4035,US session momentum,buy
-source3,2026-11-04,22:00,23:00,4075,4042,Trend continuation,buy
-source3,2026-11-04,23:00,00:00,4070,4040,Profit taking,sell
-source3,2026-11-05,00:00,01:00,4062,4032,Late US trade,sell
-source3,2026-11-05,01:00,02:00,4055,4025,Late US trade,sell
-source3,2026-11-05,02:00,03:00,4048,4018,Trend check,sell
-source3,2026-11-05,03:00,04:00,4045,4015,Thin liquidity,wait
-source3,2026-11-05,04:00,05:00,4052,4020,US close positioning,buy
-source3,2026-11-05,05:00,06:00,4058,4025,Rollover / Asia prep,buy
+source3,2026-11-05,06:00,07:00,4068,4052,Asia open / post-election positioning,BUY
+source3,2026-11-05,07:00,08:00,4074,4058,Asia momentum,BUY
+source3,2026-11-05,08:00,09:00,4078,4060,Thailand/Asia session,BUY
+source3,2026-11-05,09:00,10:00,4082,4065,Asia session,BUY
+source3,2026-11-05,10:00,11:00,4085,4068,Asia session,BUY
+source3,2026-11-05,11:00,12:00,4080,4062,Pre-Europe consolidation,SELL
+source3,2026-11-05,12:00,13:00,4078,4058,Europe opening flow,SELL
+source3,2026-11-05,13:00,14:00,4075,4052,Europe session / USD watch,SELL
+source3,2026-11-05,14:00,15:00,4078,4055,Europe session,BUY
+source3,2026-11-05,15:00,16:00,4085,4062,US pre-market positioning,BUY
+source3,2026-11-05,16:00,17:00,4090,4068,US pre-market,BUY
+source3,2026-11-05,17:00,18:00,4095,4070,US data risk,BUY
+source3,2026-11-05,18:00,19:00,4102,4075,US session,BUY
+source3,2026-11-05,19:00,20:00,4105,4080,US session,BUY
+source3,2026-11-05,20:00,21:00,4110,4082,US liquidity,BUY
+source3,2026-11-05,21:00,22:00,4115,4085,US session / geopolitical headlines,BUY
+source3,2026-11-05,22:00,23:00,4112,4088,Profit-taking risk,SELL
+source3,2026-11-05,23:00,00:00,4108,4080,Late US session,SELL
+source3,2026-11-06,00:00,01:00,4100,4075,Late session volatility,SELL
+source3,2026-11-06,01:00,02:00,4095,4070,US data reaction,SELL
+source3,2026-11-06,02:00,03:00,4098,4072,Consolidation,BUY
+source3,2026-11-06,03:00,04:00,4102,4080,US close approach,BUY
+source3,2026-11-06,04:00,05:00,4100,4078,Pre-close profit taking,SELL
+source3,2026-11-06,05:00,06:00,4095,4075,Market close / thin liquidity,SELL
