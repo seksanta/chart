@@ -1,11 +1,25 @@
 ﻿source,date,t1,t2,mx,mn,event,sugg
-source3,2026-11-05,20:00,21:00,4142,4108,US session volatility,BUY on pullback; avoid chasing
-source3,2026-11-05,21:00,22:00,4152,4115,US data and USD/yield reaction,BUY if holds above 4115; otherwise SELL scalp
-source3,2026-11-05,22:00,23:00,4160,4125,US session momentum,SELL near 4155-4160 unless breakout holds
-source3,2026-11-05,23:00,00:00,4168,4135,Momentum and resistance test,BUY only on confirmed breakout above 4160
-source3,2026-11-06,00:00,01:00,4175,4140,Late US session / profit taking risk,SELL scalp near resistance; take profit quickly
-source3,2026-11-06,01:00,02:00,4165,4130,Late US session,NEUTRAL; SELL if breaks below 4140
-source3,2026-11-06,02:00,03:00,4155,4125,Liquidity begins to thin,SELL rallies while below 4160
-source3,2026-11-06,03:00,04:00,4150,4115,Pre-close volatility,NEUTRAL to SELL; protect profits
-source3,2026-11-06,04:00,05:00,4145,4105,Market close approach,SELL only on rebound; avoid new large positions
-source3,2026-11-06,05:00,06:00,4138,4098,Thin liquidity,NEUTRAL; wait for Asia session
+source3,2026-11-06,06:00,07:00,4102,4078,Asia open; technical rebound,BUY near support if it holds
+source3,2026-11-06,07:00,08:00,4110,4082,Asia session,BUY pullback; TP near 4105-4110
+source3,2026-11-06,08:00,09:00,4115,4088,Resistance test,SELL scalp on rejection near resistance
+source3,2026-11-06,09:00,10:00,4118,4090,Consolidation,NEUTRAL; BUY only on confirmed breakout
+source3,2026-11-06,10:00,11:00,4122,4094,Pre-Europe positioning,BUY while above support
+source3,2026-11-06,11:00,12:00,4125,4098,Europe preparation,SELL scalp near resistance if no breakout
+source3,2026-11-06,12:00,13:00,4130,4100,European flow,BUY pullback above support
+source3,2026-11-06,13:00,14:00,4135,4105,Trend continuation,BUY while momentum positive
+source3,2026-11-06,14:00,15:00,4140,4108,European session,SELL scalp near upper range
+source3,2026-11-06,15:00,16:00,4142,4110,Pre-US positioning,NEUTRAL; reduce exposure before NFP
+source3,2026-11-06,16:00,17:00,4145,4112,Pre-NFP volatility,NEUTRAL; avoid large new positions
+source3,2026-11-06,17:00,18:00,4160,4095,US session build-up,NEUTRAL; wait for direction
+source3,2026-11-06,18:00,19:00,4170,4088,Pre-NFP volatility,NEUTRAL; protect profits
+source3,2026-11-06,19:00,20:00,4180,4075,NFP at 20:30 Thai time,Weak jobs BUY / strong jobs SELL after confirmation
+source3,2026-11-06,20:00,21:00,4190,4065,Post-NFP reaction,Follow confirmed breakout; high volatility
+source3,2026-11-06,21:00,22:00,4185,4080,US data digestion,BUY above 4140; SELL below 4105
+source3,2026-11-06,22:00,23:00,4175,4090,US session momentum,SELL rallies if momentum fades
+source3,2026-11-06,23:00,00:00,4170,4095,Late US session,NEUTRAL to SELL near resistance
+source3,2026-11-07,00:00,01:00,4165,4090,Profit-taking risk,SELL scalp near upper range
+source3,2026-11-07,01:00,02:00,4155,4085,Late US session,NEUTRAL; follow momentum
+source3,2026-11-07,02:00,03:00,4148,4080,Liquidity thins,SELL rallies unless breakout holds
+source3,2026-11-07,03:00,04:00,4140,4075,Pre-close volatility,NEUTRAL to SELL
+source3,2026-11-07,04:00,05:00,4135,4070,Market close approach,Take profit; avoid large new positions
+source3,2026-11-07,05:00,06:00,4130,4065,Thin liquidity,NEUTRAL
