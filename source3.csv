@@ -1,25 +1,11 @@
 ﻿source,date,t1,t2,mx,mn,event,sugg
-source3,2026-11-05,06:00,07:00,4068,4052,Asia open / post-election positioning,BUY
-source3,2026-11-05,07:00,08:00,4074,4058,Asia momentum,BUY
-source3,2026-11-05,08:00,09:00,4078,4060,Thailand/Asia session,BUY
-source3,2026-11-05,09:00,10:00,4082,4065,Asia session,BUY
-source3,2026-11-05,10:00,11:00,4085,4068,Asia session,BUY
-source3,2026-11-05,11:00,12:00,4080,4062,Pre-Europe consolidation,SELL
-source3,2026-11-05,12:00,13:00,4078,4058,Europe opening flow,SELL
-source3,2026-11-05,13:00,14:00,4075,4052,Europe session / USD watch,SELL
-source3,2026-11-05,14:00,15:00,4078,4055,Europe session,BUY
-source3,2026-11-05,15:00,16:00,4085,4062,US pre-market positioning,BUY
-source3,2026-11-05,16:00,17:00,4090,4068,US pre-market,BUY
-source3,2026-11-05,17:00,18:00,4095,4070,US data risk,BUY
-source3,2026-11-05,18:00,19:00,4102,4075,US session,BUY
-source3,2026-11-05,19:00,20:00,4105,4080,US session,BUY
-source3,2026-11-05,20:00,21:00,4110,4082,US liquidity,BUY
-source3,2026-11-05,21:00,22:00,4115,4085,US session / geopolitical headlines,BUY
-source3,2026-11-05,22:00,23:00,4112,4088,Profit-taking risk,SELL
-source3,2026-11-05,23:00,00:00,4108,4080,Late US session,SELL
-source3,2026-11-06,00:00,01:00,4100,4075,Late session volatility,SELL
-source3,2026-11-06,01:00,02:00,4095,4070,US data reaction,SELL
-source3,2026-11-06,02:00,03:00,4098,4072,Consolidation,BUY
-source3,2026-11-06,03:00,04:00,4102,4080,US close approach,BUY
-source3,2026-11-06,04:00,05:00,4100,4078,Pre-close profit taking,SELL
-source3,2026-11-06,05:00,06:00,4095,4075,Market close / thin liquidity,SELL
+source3,2026-11-05,20:00,21:00,4142,4108,US session volatility,BUY on pullback; avoid chasing
+source3,2026-11-05,21:00,22:00,4152,4115,US data and USD/yield reaction,BUY if holds above 4115; otherwise SELL scalp
+source3,2026-11-05,22:00,23:00,4160,4125,US session momentum,SELL near 4155-4160 unless breakout holds
+source3,2026-11-05,23:00,00:00,4168,4135,Momentum and resistance test,BUY only on confirmed breakout above 4160
+source3,2026-11-06,00:00,01:00,4175,4140,Late US session / profit taking risk,SELL scalp near resistance; take profit quickly
+source3,2026-11-06,01:00,02:00,4165,4130,Late US session,NEUTRAL; SELL if breaks below 4140
+source3,2026-11-06,02:00,03:00,4155,4125,Liquidity begins to thin,SELL rallies while below 4160
+source3,2026-11-06,03:00,04:00,4150,4115,Pre-close volatility,NEUTRAL to SELL; protect profits
+source3,2026-11-06,04:00,05:00,4145,4105,Market close approach,SELL only on rebound; avoid new large positions
+source3,2026-11-06,05:00,06:00,4138,4098,Thin liquidity,NEUTRAL; wait for Asia session
