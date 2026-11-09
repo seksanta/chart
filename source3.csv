@@ -1,12 +1,25 @@
 source,date,t1,t2,mx,mn,event,sugg
-source3,2026-11-06,19:00,20:00,4080,4055,Pre-NFP positioning,SELL
-source3,2026-11-06,20:00,21:00,4105,4015,US NFP + wages + unemployment,WAIT / NEWS
-source3,2026-11-06,21:00,22:00,4120,4025,Post-NFP confirmation,BUY if weak data / SELL if strong
-source3,2026-11-06,22:00,23:00,4115,4050,US follow-through,BUY above 4090; otherwise SELL
-source3,2026-11-06,23:00,00:00,4110,4060,Late US session,SELL near resistance
-source3,2026-11-07,00:00,01:00,4105,4055,US liquidity,SELL
-source3,2026-11-07,01:00,02:00,4095,4045,Pre-UoM positioning,SELL
-source3,2026-11-07,02:00,03:00,4110,4035,UoM sentiment / inflation expectations,WAIT / NEWS
-source3,2026-11-07,03:00,04:00,4105,4040,Post-data reaction,BUY if USD weak / SELL if USD strong
-source3,2026-11-07,04:00,05:00,4095,4045,Late US trading,SELL / TAKE PROFIT
-source3,2026-11-07,05:00,06:00,4090,4050,Market close approach,TAKE PROFIT
+source3,2026-11-09,06:00,07:00,4092,4072,Asia open; follow-through from prior close,BUY on dip
+source3,2026-11-09,07:00,08:00,4100,4078,Asian session momentum,BUY
+source3,2026-11-09,08:00,09:00,4108,4085,China/Asia risk sentiment,BUY
+source3,2026-11-09,09:00,10:00,4112,4090,Resistance test,WAIT
+source3,2026-11-09,10:00,11:00,4115,4092,Asian consolidation,BUY on dip
+source3,2026-11-09,11:00,12:00,4110,4088,Profit-taking risk,SELL near resistance
+source3,2026-11-09,12:00,13:00,4115,4090,Europe pre-open positioning,WAIT
+source3,2026-11-09,13:00,14:00,4120,4095,European liquidity increases,BUY
+source3,2026-11-09,14:00,15:00,4128,4100,Momentum toward resistance,BUY
+source3,2026-11-09,15:00,16:00,4132,4105,Resistance 4130 area,SELL near resistance
+source3,2026-11-09,16:00,17:00,4135,4108,Europe session trend,WAIT
+source3,2026-11-09,17:00,18:00,4138,4110,USD/yield reaction,BUY if above 4110
+source3,2026-11-09,18:00,19:00,4142,4115,US session positioning,BUY
+source3,2026-11-09,19:00,20:00,4140,4118,Profit taking near highs,SELL short-term
+source3,2026-11-09,20:00,21:00,4138,4115,Current zone; Fed comments risk,WAIT / SELL near 4140
+source3,2026-11-09,21:00,22:00,4145,4118,US liquidity; no major data,BUY if breakout
+source3,2026-11-09,22:00,23:00,4152,4120,Breakout scenario,BUY above 4145
+source3,2026-11-09,23:00,00:00,4155,4125,Late US session resistance,TAKE PROFIT / SELL
+source3,2026-11-10,00:00,01:00,4148,4118,Profit-taking risk,SELL bias
+source3,2026-11-10,01:00,02:00,4142,4110,Thin liquidity; USD/yields,SELL bias
+source3,2026-11-10,02:00,03:00,4138,4105,Consolidation,WAIT
+source3,2026-11-10,03:00,04:00,4135,4100,Late-session adjustment,BUY on support
+source3,2026-11-10,04:00,05:00,4140,4105,Pre-Asia positioning,WAIT
+source3,2026-11-10,05:00,06:00,4145,4110,Close / next-day CPI positioning,TAKE PROFIT
