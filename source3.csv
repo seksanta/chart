@@ -1,25 +1,13 @@
 source,date,t1,t2,mx,mn,event,sugg
-source3,2026-11-12,06:00,07:00,4000,3976,Asia open / technical support,WAIT
-source3,2026-11-12,07:00,08:00,4003,3978,Test 3980 support,BUY
-source3,2026-11-12,08:00,09:00,4006,3982,Asia session,BUY
-source3,2026-11-12,09:00,10:00,4010,3985,Rebound attempt,BUY
-source3,2026-11-12,10:00,11:00,4012,3988,Resistance near 4005-4010,SELL
-source3,2026-11-12,11:00,12:00,4008,3984,Sideway / profit taking,WAIT
-source3,2026-11-12,12:00,13:00,4005,3978,Europe positioning,SELL
-source3,2026-11-12,13:00,14:00,4008,3975,USD / yield watch,SELL
-source3,2026-11-12,14:00,15:00,4015,3980,US session preparation,WAIT
-source3,2026-11-12,15:00,16:00,4022,3988,Existing Home Sales,WAIT
-source3,2026-11-12,16:00,17:00,4025,3992,Post-data reaction,BUY
-source3,2026-11-12,17:00,18:00,4030,3995,US momentum,BUY
-source3,2026-11-12,18:00,19:00,4035,3998,Fed speakers / bond auction,WAIT
-source3,2026-11-12,19:00,20:00,4038,4002,Federal Budget / USD watch,SELL
-source3,2026-11-12,20:00,21:00,4035,3998,US afternoon volatility,SELL
-source3,2026-11-12,21:00,22:00,4028,3992,Profit taking,SELL
-source3,2026-11-12,22:00,23:00,4022,3988,Technical support test,WAIT
-source3,2026-11-12,23:00,00:00,4018,3985,Late US session,WAIT
-source3,2026-11-13,00:00,01:00,4015,3982,Liquidity decreases,BUY
-source3,2026-11-13,01:00,02:00,4012,3978,Support 3980 critical,BUY
-source3,2026-11-13,02:00,03:00,4008,3972,Bearish continuation risk,SELL
-source3,2026-11-13,03:00,04:00,4005,3970,US close approach,SELL
-source3,2026-11-13,04:00,05:00,4002,3974,Position adjustment,WAIT
-source3,2026-11-13,05:00,06:00,4005,3978,Market close / Asia handoff,WAIT
+source3,2026-11-12,18:00,19:00,3960,3935,Support zone,WAIT
+source3,2026-11-12,19:00,20:00,3970,3940,Technical rebound attempt,BUY
+source3,2026-11-12,20:00,21:00,3980,3942,US session / Fed tone,BUY
+source3,2026-11-12,21:00,22:00,3985,3948,Resistance test,SELL
+source3,2026-11-12,22:00,23:00,3978,3940,Profit taking,SELL
+source3,2026-11-12,23:00,00:00,3972,3935,Late US session,WAIT
+source3,2026-11-13,00:00,01:00,3968,3932,Dollar direction,SELL
+source3,2026-11-13,01:00,02:00,3970,3935,Support test,WAIT
+source3,2026-11-13,02:00,03:00,3975,3940,Technical rebound possible,BUY
+source3,2026-11-13,03:00,04:00,3970,3938,US close positioning,SELL
+source3,2026-11-13,04:00,05:00,3965,3935,Low liquidity,WAIT
+source3,2026-11-13,05:00,06:00,3970,3940,Market close,WAIT
