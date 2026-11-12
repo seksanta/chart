@@ -1,13 +1,25 @@
 source,date,t1,t2,mx,mn,event,sugg
-source3,2026-11-12,18:00,19:00,3960,3935,Support zone,WAIT
-source3,2026-11-12,19:00,20:00,3970,3940,Technical rebound attempt,BUY
-source3,2026-11-12,20:00,21:00,3980,3942,US session / Fed tone,BUY
-source3,2026-11-12,21:00,22:00,3985,3948,Resistance test,SELL
-source3,2026-11-12,22:00,23:00,3978,3940,Profit taking,SELL
-source3,2026-11-12,23:00,00:00,3972,3935,Late US session,WAIT
-source3,2026-11-13,00:00,01:00,3968,3932,Dollar direction,SELL
-source3,2026-11-13,01:00,02:00,3970,3935,Support test,WAIT
-source3,2026-11-13,02:00,03:00,3975,3940,Technical rebound possible,BUY
-source3,2026-11-13,03:00,04:00,3970,3938,US close positioning,SELL
-source3,2026-11-13,04:00,05:00,3965,3935,Low liquidity,WAIT
-source3,2026-11-13,05:00,06:00,3970,3940,Market close,WAIT
+source3,2026-11-13,06:00,07:00,3892,3868,Asia open; oversold rebound risk,WAIT
+source3,2026-11-13,07:00,08:00,3900,3870,Technical rebound attempt,BUY
+source3,2026-11-13,08:00,09:00,3908,3875,Asia session,BUY
+source3,2026-11-13,09:00,10:00,3915,3880,Resistance test,SELL
+source3,2026-11-13,10:00,11:00,3910,3872,Bearish trend remains,SELL
+source3,2026-11-13,11:00,12:00,3905,3865,Support test,WAIT
+source3,2026-11-13,12:00,13:00,3910,3868,Europe positioning,SELL
+source3,2026-11-13,13:00,14:00,3918,3870,Pre-US positioning,WAIT
+source3,2026-11-13,14:00,15:00,3925,3875,USD and yields watch,WAIT
+source3,2026-11-13,15:00,16:00,3935,3880,US PPI anticipation,WAIT
+source3,2026-11-13,16:00,17:00,3945,3860,US PPI / volatility,WAIT
+source3,2026-11-13,17:00,18:00,3938,3855,Post-data trend,SELL
+source3,2026-11-13,18:00,19:00,3930,3850,Dollar direction,SELL
+source3,2026-11-13,19:00,20:00,3925,3845,Bearish continuation risk,SELL
+source3,2026-11-13,20:00,21:00,3930,3850,US afternoon,WAIT
+source3,2026-11-13,21:00,22:00,3940,3860,Technical rebound possible,BUY
+source3,2026-11-13,22:00,23:00,3945,3870,Resistance test,SELL
+source3,2026-11-13,23:00,00:00,3938,3865,Profit taking,WAIT
+source3,2026-11-14,00:00,01:00,3930,3855,Late US session,SELL
+source3,2026-11-14,01:00,02:00,3925,3850,Low liquidity support test,WAIT
+source3,2026-11-14,02:00,03:00,3930,3855,Short-covering rebound,BUY
+source3,2026-11-14,03:00,04:00,3925,3850,US close positioning,SELL
+source3,2026-11-14,04:00,05:00,3918,3848,Thin liquidity,WAIT
+source3,2026-11-14,05:00,06:00,3920,3850,Weekly close,WAIT
