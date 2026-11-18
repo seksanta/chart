@@ -1,25 +1,25 @@
 ﻿source,date,t1,t2,mx,mn,event,sugg
-source3,2026-11-18,06:00,07:00,3810,3785,Asia session; bearish pressure,SELL
-source3,2026-11-18,07:00,08:00,3805,3780,Weak rebound; trend remains down,WAIT
-source3,2026-11-18,08:00,09:00,3800,3775,Support test,SELL
-source3,2026-11-18,09:00,10:00,3795,3770,Lower-low risk,WAIT
-source3,2026-11-18,10:00,11:00,3795,3775,Oversold bounce risk,WAIT
-source3,2026-11-18,11:00,12:00,3795,3770,Sell rallies; avoid chasing,SELL
-source3,2026-11-18,12:00,13:00,3800,3768,Possible consolidation,WAIT
-source3,2026-11-18,13:00,14:00,3805,3765,Europe positioning; bearish bias,SELL
-source3,2026-11-18,14:00,15:00,3805,3760,USD and Treasury yields watch,WAIT
-source3,2026-11-18,15:00,16:00,3810,3760,Potential technical rebound,WAIT
-source3,2026-11-18,16:00,17:00,3815,3760,Bearish structure; resistance test,SELL
-source3,2026-11-18,17:00,18:00,3810,3755,Weakness may persist,SELL
-source3,2026-11-18,18:00,19:00,3805,3755,Pre-US data positioning,WAIT
-source3,2026-11-18,19:00,20:00,3810,3750,Housing data approaching,WAIT
-source3,2026-11-18,20:00,21:00,3820,3745,US housing starts and building permits; volatility,WAIT
-source3,2026-11-18,21:00,22:00,3815,3740,Post-data USD/yield reaction,SELL
-source3,2026-11-18,22:00,23:00,3810,3740,EIA crude inventories; headline volatility,WAIT
-source3,2026-11-18,23:00,00:00,3805,3735,Trend confirmation after US data,SELL
-source3,2026-11-19,00:00,01:00,3800,3735,US session; liquidity and dollar watch,WAIT
-source3,2026-11-19,01:00,02:00,3805,3730,Treasury auction / Fed speaker watch,WAIT
-source3,2026-11-19,02:00,03:00,3820,3725,FOMC minutes release; high volatility,WAIT
-source3,2026-11-19,03:00,04:00,3825,3730,Post-FOMC repricing; wait for direction,WAIT
-source3,2026-11-19,04:00,05:00,3815,3725,Late US session; bearish bias below 3805,SELL
-source3,2026-11-19,05:00,06:00,3810,3725,Session close / position adjustment,WAIT
+source3,2026-11-19,06:00,07:00,3752,3735,Asia open; short-covering rebound possible,WAIT
+source3,2026-11-19,07:00,08:00,3755,3738,Watch whether rebound holds above 3745,BUY only on M5 confirmation
+source3,2026-11-19,08:00,09:00,3755,3735,Asia session; broader trend remains bearish,SELL on rally
+source3,2026-11-19,09:00,10:00,3750,3730,Weak momentum; support test,WAIT
+source3,2026-11-19,10:00,11:00,3750,3728,Lower-high risk,SELL on failed retest
+source3,2026-11-19,11:00,12:00,3755,3725,Bearish bias; avoid chasing lows,WAIT
+source3,2026-11-19,12:00,13:00,3755,3725,Consolidation possible,WAIT
+source3,2026-11-19,13:00,14:00,3760,3725,Europe positioning; resistance test,SELL on rejection
+source3,2026-11-19,14:00,15:00,3760,3720,Trend still down below 3775,SELL on rally
+source3,2026-11-19,15:00,16:00,3765,3720,European liquidity; volatility may rise,WAIT
+source3,2026-11-19,16:00,17:00,3765,3720,Lower-high setup possible,SELL on M5 reversal
+source3,2026-11-19,17:00,18:00,3760,3718,Support zone near prior low,WAIT
+source3,2026-11-19,18:00,19:00,3760,3715,Pre-US data positioning,WAIT
+source3,2026-11-19,19:00,20:00,3765,3715,USD and yields in focus,SELL on rally
+source3,2026-11-19,20:00,21:00,3775,3708,20:30 jobless claims and Philly Fed; high volatility,WAIT for data
+source3,2026-11-19,21:00,22:00,3780,3705,21:25 Jefferson remarks; assess USD/yield reaction,WAIT
+source3,2026-11-19,22:00,23:00,3780,3705,22:00 advance services report; 22:30 gas storage,WAIT
+source3,2026-11-19,23:00,00:00,3770,3700,Post-data direction; bearish below 3760,SELL on failed rebound
+source3,2026-11-20,00:00,01:00,3765,3698,US session; watch real yields and dollar,WAIT
+source3,2026-11-20,01:00,02:00,3770,3695,01:00 TIPS auction; real-yield sensitivity,WAIT
+source3,2026-11-20,02:00,03:00,3770,3695,Thin liquidity; Fed policy headlines,SELL on rally
+source3,2026-11-20,03:00,04:00,3775,3690,02:15 Barr remarks may affect rate expectations,WAIT
+source3,2026-11-20,04:00,05:00,3770,3690,04:30 Fed balance sheet; late-session volatility,WAIT
+source3,2026-11-20,05:00,06:00,3765,3690,Session close; bearish below 3775,SELL only on confirmed rejection
