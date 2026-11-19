@@ -1,25 +1,25 @@
 ﻿source,date,t1,t2,mx,mn,event,sugg
-source3,2026-11-19,06:00,07:00,3752,3735,Asia open; short-covering rebound possible,WAIT
-source3,2026-11-19,07:00,08:00,3755,3738,Watch whether rebound holds above 3745,BUY only on M5 confirmation
-source3,2026-11-19,08:00,09:00,3755,3735,Asia session; broader trend remains bearish,SELL on rally
-source3,2026-11-19,09:00,10:00,3750,3730,Weak momentum; support test,WAIT
-source3,2026-11-19,10:00,11:00,3750,3728,Lower-high risk,SELL on failed retest
-source3,2026-11-19,11:00,12:00,3755,3725,Bearish bias; avoid chasing lows,WAIT
-source3,2026-11-19,12:00,13:00,3755,3725,Consolidation possible,WAIT
-source3,2026-11-19,13:00,14:00,3760,3725,Europe positioning; resistance test,SELL on rejection
-source3,2026-11-19,14:00,15:00,3760,3720,Trend still down below 3775,SELL on rally
-source3,2026-11-19,15:00,16:00,3765,3720,European liquidity; volatility may rise,WAIT
-source3,2026-11-19,16:00,17:00,3765,3720,Lower-high setup possible,SELL on M5 reversal
-source3,2026-11-19,17:00,18:00,3760,3718,Support zone near prior low,WAIT
-source3,2026-11-19,18:00,19:00,3760,3715,Pre-US data positioning,WAIT
-source3,2026-11-19,19:00,20:00,3765,3715,USD and yields in focus,SELL on rally
-source3,2026-11-19,20:00,21:00,3775,3708,20:30 jobless claims and Philly Fed; high volatility,WAIT for data
-source3,2026-11-19,21:00,22:00,3780,3705,21:25 Jefferson remarks; assess USD/yield reaction,WAIT
-source3,2026-11-19,22:00,23:00,3780,3705,22:00 advance services report; 22:30 gas storage,WAIT
-source3,2026-11-19,23:00,00:00,3770,3700,Post-data direction; bearish below 3760,SELL on failed rebound
-source3,2026-11-20,00:00,01:00,3765,3698,US session; watch real yields and dollar,WAIT
-source3,2026-11-20,01:00,02:00,3770,3695,01:00 TIPS auction; real-yield sensitivity,WAIT
-source3,2026-11-20,02:00,03:00,3770,3695,Thin liquidity; Fed policy headlines,SELL on rally
-source3,2026-11-20,03:00,04:00,3775,3690,02:15 Barr remarks may affect rate expectations,WAIT
-source3,2026-11-20,04:00,05:00,3770,3690,04:30 Fed balance sheet; late-session volatility,WAIT
-source3,2026-11-20,05:00,06:00,3765,3690,Session close; bearish below 3775,SELL only on confirmed rejection
+source3,2026-11-19,06:00,07:00,3750,3725,Asia session; weak rebound after sharp selloff,WAIT
+source3,2026-11-19,07:00,08:00,3755,3730,Short-covering rebound; trend still bearish,WAIT
+source3,2026-11-19,08:00,09:00,3755,3730,Resistance test near 3750-3755,SELL on rejection
+source3,2026-11-19,09:00,10:00,3750,3725,Bearish M15/M30 structure,SELL on rally
+source3,2026-11-19,10:00,11:00,3750,3720,Support test; avoid chasing lows,WAIT
+source3,2026-11-19,11:00,12:00,3755,3720,Consolidation possible,WAIT
+source3,2026-11-19,12:00,13:00,3755,3720,Watch 3720 support,SELL on failed rebound
+source3,2026-11-19,13:00,14:00,3750,3715,Europe positioning; USD/yields watch,WAIT
+source3,2026-11-19,14:00,15:00,3755,3715,Bearish below 3760,SELL on rejection
+source3,2026-11-19,15:00,16:00,3760,3715,Volatility may rise with liquidity,WAIT
+source3,2026-11-19,16:00,17:00,3760,3710,Lower-high setup possible,SELL on M5 reversal
+source3,2026-11-19,17:00,18:00,3755,3710,Stabilizing near 3735-3745,WAIT
+source3,2026-11-19,18:00,19:00,3760,3710,Fed speakers; watch rate guidance,WAIT
+source3,2026-11-19,19:00,20:00,3765,3705,Fed speakers / pre-data positioning,WAIT
+source3,2026-11-19,20:00,21:00,3770,3695,20:30 Initial Claims and Philly Fed,WAIT for data
+source3,2026-11-19,21:00,22:00,3775,3695,Post-data USD/yield reaction,SELL if data strong
+source3,2026-11-19,22:00,23:00,3780,3695,22:00 Leading Index; 22:30 gas storage,WAIT
+source3,2026-11-19,23:00,00:00,3775,3690,Fed speaker headlines; confirm trend,SELL on failed rebound
+source3,2026-11-20,00:00,01:00,3770,3690,US session; dollar and real yields,WAIT
+source3,2026-11-20,01:00,02:00,3775,3685,Fed remarks may affect rate outlook,WAIT
+source3,2026-11-20,02:00,03:00,3780,3685,Fed speaker / liquidity volatility,WAIT
+source3,2026-11-20,03:00,04:00,3780,3680,Bearish unless price reclaims 3770,SELL on rally
+source3,2026-11-20,04:00,05:00,3775,3680,Late US session; watch 3690 support,WAIT
+source3,2026-11-20,05:00,06:00,3770,3680,Session close; reassess Asia open,WAIT
