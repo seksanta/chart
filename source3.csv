@@ -1,25 +1,25 @@
 ﻿source,date,t1,t2,mx,mn,event,sugg
-source3,2026-11-19,06:00,07:00,3750,3725,Asia session; weak rebound after sharp selloff,WAIT
-source3,2026-11-19,07:00,08:00,3755,3730,Short-covering rebound; trend still bearish,WAIT
-source3,2026-11-19,08:00,09:00,3755,3730,Resistance test near 3750-3755,SELL on rejection
-source3,2026-11-19,09:00,10:00,3750,3725,Bearish M15/M30 structure,SELL on rally
-source3,2026-11-19,10:00,11:00,3750,3720,Support test; avoid chasing lows,WAIT
-source3,2026-11-19,11:00,12:00,3755,3720,Consolidation possible,WAIT
-source3,2026-11-19,12:00,13:00,3755,3720,Watch 3720 support,SELL on failed rebound
-source3,2026-11-19,13:00,14:00,3750,3715,Europe positioning; USD/yields watch,WAIT
-source3,2026-11-19,14:00,15:00,3755,3715,Bearish below 3760,SELL on rejection
-source3,2026-11-19,15:00,16:00,3760,3715,Volatility may rise with liquidity,WAIT
-source3,2026-11-19,16:00,17:00,3760,3710,Lower-high setup possible,SELL on M5 reversal
-source3,2026-11-19,17:00,18:00,3755,3710,Stabilizing near 3735-3745,WAIT
-source3,2026-11-19,18:00,19:00,3760,3710,Fed speakers; watch rate guidance,WAIT
-source3,2026-11-19,19:00,20:00,3765,3705,Fed speakers / pre-data positioning,WAIT
-source3,2026-11-19,20:00,21:00,3770,3695,20:30 Initial Claims and Philly Fed,WAIT for data
-source3,2026-11-19,21:00,22:00,3775,3695,Post-data USD/yield reaction,SELL if data strong
-source3,2026-11-19,22:00,23:00,3780,3695,22:00 Leading Index; 22:30 gas storage,WAIT
-source3,2026-11-19,23:00,00:00,3775,3690,Fed speaker headlines; confirm trend,SELL on failed rebound
-source3,2026-11-20,00:00,01:00,3770,3690,US session; dollar and real yields,WAIT
-source3,2026-11-20,01:00,02:00,3775,3685,Fed remarks may affect rate outlook,WAIT
-source3,2026-11-20,02:00,03:00,3780,3685,Fed speaker / liquidity volatility,WAIT
-source3,2026-11-20,03:00,04:00,3780,3680,Bearish unless price reclaims 3770,SELL on rally
-source3,2026-11-20,04:00,05:00,3775,3680,Late US session; watch 3690 support,WAIT
-source3,2026-11-20,05:00,06:00,3770,3680,Session close; reassess Asia open,WAIT
+source3,2026-11-26,06:00,07:00,3590,3560,"Past interval; estimate only, chart shows current quote near 3560",WAIT
+source3,2026-11-26,07:00,08:00,3590,3555,Past interval; estimate only,WAIT
+source3,2026-11-26,08:00,09:00,3590,3545,Past interval; estimate only,WAIT
+source3,2026-11-26,09:00,10:00,3585,3535,Past interval; estimate only,WAIT
+source3,2026-11-26,10:00,11:00,3580,3535,Past interval; estimate only,WAIT
+source3,2026-11-26,11:00,12:00,3580,3540,Past interval; estimate only,WAIT
+source3,2026-11-26,12:00,13:00,3585,3545,Past interval; estimate only,WAIT
+source3,2026-11-26,13:00,14:00,3590,3545,Past interval; estimate only,WAIT
+source3,2026-11-26,14:00,15:00,3590,3550,Past interval; estimate only,WAIT
+source3,2026-11-26,15:00,16:00,3590,3550,Past interval; estimate only,WAIT
+source3,2026-11-26,16:00,17:00,3585,3545,Past interval; estimate only,WAIT
+source3,2026-11-26,17:00,18:00,3575,3545,"US Thanksgiving; thin liquidity, no major US data",WAIT
+source3,2026-11-26,18:00,19:00,3575,3545,Low liquidity; price near 3560 pivot,WAIT
+source3,2026-11-26,19:00,20:00,3580,3545,No high-impact US release scheduled,WAIT
+source3,2026-11-26,20:00,21:00,3580,3540,Thin holiday trading; avoid breakout chasing,WAIT
+source3,2026-11-26,21:00,22:00,3585,3540,Monitor USD and yields; US markets closed,WAIT
+source3,2026-11-26,22:00,23:00,3585,3535,Low liquidity may widen spread,WAIT
+source3,2026-11-26,23:00,00:00,3580,3535,Bearish below 3590; sell only on rejection,SELL on rejection
+source3,2026-11-27,00:00,01:00,3575,3530,Thin liquidity; watch 3540 support,WAIT
+source3,2026-11-27,01:00,02:00,3575,3530,No major US data; holiday conditions,WAIT
+source3,2026-11-27,02:00,03:00,3580,3525,Break below 3535 may extend downside,SELL only after breakdown retest
+source3,2026-11-27,03:00,04:00,3580,3525,Low liquidity; avoid market orders,WAIT
+source3,2026-11-27,04:00,05:00,3575,3525,Potential short-covering near support,WAIT
+source3,2026-11-27,05:00,06:00,3575,3525,Reassess at Asia session; forecast uncertainty high,WAIT
