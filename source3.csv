@@ -1,25 +1,25 @@
 ﻿source,date,t1,t2,mx,mn,event,sugg
-source3,2026-11-26,06:00,07:00,3590,3560,"Past interval; estimate only, chart shows current quote near 3560",WAIT
-source3,2026-11-26,07:00,08:00,3590,3555,Past interval; estimate only,WAIT
-source3,2026-11-26,08:00,09:00,3590,3545,Past interval; estimate only,WAIT
-source3,2026-11-26,09:00,10:00,3585,3535,Past interval; estimate only,WAIT
-source3,2026-11-26,10:00,11:00,3580,3535,Past interval; estimate only,WAIT
-source3,2026-11-26,11:00,12:00,3580,3540,Past interval; estimate only,WAIT
-source3,2026-11-26,12:00,13:00,3585,3545,Past interval; estimate only,WAIT
-source3,2026-11-26,13:00,14:00,3590,3545,Past interval; estimate only,WAIT
-source3,2026-11-26,14:00,15:00,3590,3550,Past interval; estimate only,WAIT
-source3,2026-11-26,15:00,16:00,3590,3550,Past interval; estimate only,WAIT
-source3,2026-11-26,16:00,17:00,3585,3545,Past interval; estimate only,WAIT
-source3,2026-11-26,17:00,18:00,3575,3545,"US Thanksgiving; thin liquidity, no major US data",WAIT
-source3,2026-11-26,18:00,19:00,3575,3545,Low liquidity; price near 3560 pivot,WAIT
-source3,2026-11-26,19:00,20:00,3580,3545,No high-impact US release scheduled,WAIT
-source3,2026-11-26,20:00,21:00,3580,3540,Thin holiday trading; avoid breakout chasing,WAIT
-source3,2026-11-26,21:00,22:00,3585,3540,Monitor USD and yields; US markets closed,WAIT
-source3,2026-11-26,22:00,23:00,3585,3535,Low liquidity may widen spread,WAIT
-source3,2026-11-26,23:00,00:00,3580,3535,Bearish below 3590; sell only on rejection,SELL on rejection
-source3,2026-11-27,00:00,01:00,3575,3530,Thin liquidity; watch 3540 support,WAIT
-source3,2026-11-27,01:00,02:00,3575,3530,No major US data; holiday conditions,WAIT
-source3,2026-11-27,02:00,03:00,3580,3525,Break below 3535 may extend downside,SELL only after breakdown retest
-source3,2026-11-27,03:00,04:00,3580,3525,Low liquidity; avoid market orders,WAIT
-source3,2026-11-27,04:00,05:00,3575,3525,Potential short-covering near support,WAIT
-source3,2026-11-27,05:00,06:00,3575,3525,Reassess at Asia session; forecast uncertainty high,WAIT
+source3,2026-11-27,06:00,07:00,3595,3575,Asia session; rebound attempt,WAIT
+source3,2026-11-27,07:00,08:00,3605,3580,Rebound continues; monitor resistance,BUY only on pullback
+source3,2026-11-27,08:00,09:00,3615,3590,Asia buying; avoid chasing,WAIT
+source3,2026-11-27,09:00,10:00,3625,3595,Momentum improves,BUY on confirmed higher low
+source3,2026-11-27,10:00,11:00,3635,3605,Short-term rebound,WAIT
+source3,2026-11-27,11:00,12:00,3645,3615,Approaching intraday resistance,SELL only on rejection
+source3,2026-11-27,12:00,13:00,3655,3625,Rebound extension,WAIT
+source3,2026-11-27,13:00,14:00,3665,3635,Current-session rally; price near 3652,No chasing BUY
+source3,2026-11-27,14:00,15:00,3670,3635,Resistance test,BUY if holds above 3660; otherwise WAIT
+source3,2026-11-27,15:00,16:00,3675,3630,Thin holiday liquidity,WAIT
+source3,2026-11-27,16:00,17:00,3670,3625,Possible profit-taking,SELL only on M5 reversal
+source3,2026-11-27,17:00,18:00,3665,3620,Consolidation likely,WAIT
+source3,2026-11-27,18:00,19:00,3665,3615,US trade/inventory data window later,WAIT
+source3,2026-11-27,19:00,20:00,3670,3610,Thin liquidity; headline sensitivity,WAIT
+source3,2026-11-27,20:00,21:00,3675,3605,US advance trade/inventory releases around 20:30 Thai,WAIT; trade after reaction
+source3,2026-11-27,21:00,22:00,3670,3600,Data reaction; reduced liquidity,BUY only if holds 3650; otherwise WAIT
+source3,2026-11-27,22:00,23:00,3665,3595,US session shortens,WAIT
+source3,2026-11-27,23:00,00:00,3660,3590,Potential range trading,SELL on failed rebound
+source3,2026-11-28,00:00,01:00,3655,3585,Holiday-thin trade,WAIT
+source3,2026-11-28,01:00,02:00,3650,3580,US early close approaching,WAIT
+source3,2026-11-28,02:00,03:00,3650,3575,US cash market early close; liquidity may thin,Avoid new positions
+source3,2026-11-28,03:00,04:00,3645,3575,Low-liquidity consolidation,WAIT
+source3,2026-11-28,04:00,05:00,3640,3570,Possible drift/pullback,SELL only on confirmed breakdown
+source3,2026-11-28,05:00,06:00,3640,3565,End-of-session range estimate,WAIT
